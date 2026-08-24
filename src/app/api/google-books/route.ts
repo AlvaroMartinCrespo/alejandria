@@ -21,6 +21,15 @@ interface GoogleErrorResponse {
   };
 }
 
+interface OpenLibraryDocument {
+  key?: string;
+  title?: string;
+  author_name?: string[];
+  first_publish_year?: number;
+  number_of_pages_median?: number;
+  cover_i?: number;
+}
+
 function googleBooksError(status: number, data: GoogleErrorResponse, hasApiKey: boolean) {
   const reason = data.error?.errors?.[0]?.reason;
 
@@ -67,6 +76,51 @@ async function fetchGoogleBooks(url: string) {
   throw new Error("Google Books no respondió.");
 }
 
+async function searchOpenLibrary(query: string): Promise<GoogleBookResult[]> {
+  const normalizedQuery = query
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es")
+    .trim();
+  const params = new URLSearchParams({
+    q: query,
+    limit: "12",
+    fields: "key,title,author_name,first_publish_year,number_of_pages_median,cover_i",
+  });
+  const response = await fetch(`https://openlibrary.org/search.json?${params}`, {
+    headers: { "User-Agent": "Alejandria/1.0" },
+    cache: "force-cache",
+  });
+  if (!response.ok) return [];
+
+  const data = (await response.json()) as { docs?: OpenLibraryDocument[] };
+  return (data.docs ?? [])
+    .filter((document) => document.key && document.title)
+    .sort((left, right) => {
+      const score = (title = "") => {
+        const normalizedTitle = title
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLocaleLowerCase("es");
+        if (normalizedTitle === normalizedQuery) return 2;
+        if (normalizedTitle.includes(normalizedQuery)) return 1;
+        return 0;
+      };
+      return score(right.title) - score(left.title);
+    })
+    .map((document) => ({
+      googleBooksId: `openlibrary:${document.key}`,
+      title: document.title!,
+      authors: document.author_name?.length ? document.author_name : ["Autor desconocido"],
+      coverUrl: document.cover_i
+        ? `https://covers.openlibrary.org/b/id/${document.cover_i}-L.jpg`
+        : null,
+      publishedYear: document.first_publish_year ?? null,
+      pageCount: document.number_of_pages_median ?? null,
+      synopsis: "Sin sinopsis disponible.",
+    }));
+}
+
 export async function GET(request: Request) {
   const query = new URL(request.url).searchParams.get("q")?.trim();
   if (!query || query.length < 2) {
@@ -86,6 +140,16 @@ export async function GET(request: Request) {
     );
     if (!response.ok) {
       const data = error ?? {};
+      const reason = data.error?.errors?.[0]?.reason;
+      if (response.status === 503 || reason === "backendFailed") {
+        const books = await searchOpenLibrary(query);
+        if (books.length) {
+          return NextResponse.json(
+            { books, source: "openlibrary" },
+            { headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" } },
+          );
+        }
+      }
       return NextResponse.json(
         {
           error: googleBooksError(response.status, data, Boolean(apiKey)),
