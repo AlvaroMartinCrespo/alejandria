@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { BookCover } from "@/components/book-cover";
 import { useLibrary } from "@/components/library-provider";
 import type { GoogleBookResult } from "@/types/book";
@@ -11,21 +11,28 @@ export function AddBookModal({ open, onClose }: { open: boolean; onClose: () => 
   const [results, setResults] = useState<GoogleBookResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [message, setMessage] = useState("");
+  const activeRequest = useRef<AbortController | null>(null);
 
   const searchBooks = useEffectEvent(async (term: string) => {
+    activeRequest.current?.abort();
+    const controller = new AbortController();
+    activeRequest.current = controller;
     setSearching(true);
     setMessage("");
     try {
-      const response = await fetch(`/api/google-books?q=${encodeURIComponent(term)}`);
+      const response = await fetch(`/api/google-books?q=${encodeURIComponent(term)}`, {
+        signal: controller.signal,
+      });
       const data = (await response.json()) as { books?: GoogleBookResult[]; error?: string };
-      if (!response.ok) throw new Error(data.error);
+      if (!response.ok) throw new Error(data.error || `Google Books respondió con ${response.status}.`);
       setResults(data.books ?? []);
       if (!data.books?.length) setMessage("No encontramos coincidencias.");
-    } catch {
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
       setResults([]);
-      setMessage("No se pudo conectar con Google Books.");
+      setMessage(error instanceof Error ? error.message : "No se pudo conectar con Google Books.");
     } finally {
-      setSearching(false);
+      if (activeRequest.current === controller) setSearching(false);
     }
   });
 
@@ -35,7 +42,7 @@ export function AddBookModal({ open, onClose }: { open: boolean; onClose: () => 
       setMessage("");
       return;
     }
-    const timer = window.setTimeout(() => void searchBooks(query.trim()), 450);
+    const timer = window.setTimeout(() => void searchBooks(query.trim()), 700);
     return () => window.clearTimeout(timer);
   }, [query]);
 
@@ -47,6 +54,8 @@ export function AddBookModal({ open, onClose }: { open: boolean; onClose: () => 
     document.addEventListener("keydown", closeOnEscape);
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [open, onClose]);
+
+  useEffect(() => () => activeRequest.current?.abort(), []);
 
   if (!open) return null;
 
