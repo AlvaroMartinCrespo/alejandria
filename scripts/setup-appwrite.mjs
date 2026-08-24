@@ -143,8 +143,7 @@ await ensureAttribute("datetime", { key: "addedAt", required: true, array: false
 for (const [key, attributes] of [
   ["idx_status", ["status"]],
   ["idx_finished_year", ["finishedYear"]],
-  ["idx_rating", ["rating"]],
-  ["idx_authors", ["authors"]],
+  ["idx_rating", ["rating"]]
 ]) {
   await ensureIndex(key, attributes);
 }

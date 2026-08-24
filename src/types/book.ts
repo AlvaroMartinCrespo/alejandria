@@ -22,7 +22,7 @@ export interface Book {
   rating: number | null; // 0-5
   finishedYear: number | null; // año en que se terminó de leer
   addedAt: string; // ISO date
-  currentPage?: number; // progreso opcional mientras se está leyendo
+  currentPage?: number | null; // progreso opcional mientras se está leyendo
   notes?: string; // notas personales opcionales
 }
 
