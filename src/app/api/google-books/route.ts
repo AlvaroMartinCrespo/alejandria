@@ -24,6 +24,9 @@ interface GoogleErrorResponse {
 function googleBooksError(status: number, data: GoogleErrorResponse, hasApiKey: boolean) {
   const reason = data.error?.errors?.[0]?.reason;
 
+  if (status === 503 || reason === "backendFailed") {
+    return "Google Books está temporalmente fuera de servicio. Espera unos segundos y vuelve a buscar.";
+  }
   if (status === 429 || reason === "rateLimitExceeded" || reason === "dailyLimitExceeded") {
     return hasApiKey
       ? "Se agotó la cuota de Google Books para esta clave. Revisa las cuotas en Google Cloud."
@@ -39,8 +42,29 @@ function googleBooksError(status: number, data: GoogleErrorResponse, hasApiKey: 
 }
 
 function responseStatus(upstreamStatus: number) {
-  if ([400, 403, 429].includes(upstreamStatus)) return upstreamStatus;
+  if ([400, 403, 429, 503].includes(upstreamStatus)) return upstreamStatus;
   return 502;
+}
+
+function wait(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function fetchGoogleBooks(url: string) {
+  const delays = [0, 250, 750];
+
+  for (let attempt = 0; attempt < delays.length; attempt += 1) {
+    if (delays[attempt]) await wait(delays[attempt]);
+    const response = await fetch(url, { cache: "no-store" });
+    if (response.ok) return { response, error: null };
+
+    const error = (await response.json().catch(() => ({}))) as GoogleErrorResponse;
+    const reason = error.error?.errors?.[0]?.reason;
+    const transient = response.status === 503 || reason === "backendFailed";
+    if (!transient || attempt === delays.length - 1) return { response, error };
+  }
+
+  throw new Error("Google Books no respondió.");
 }
 
 export async function GET(request: Request) {
@@ -57,11 +81,11 @@ export async function GET(request: Request) {
   if (apiKey) params.set("key", apiKey);
 
   try {
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?${params}`, {
-      next: { revalidate: 3600 },
-    });
+    const { response, error } = await fetchGoogleBooks(
+      `https://www.googleapis.com/books/v1/volumes?${params}`,
+    );
     if (!response.ok) {
-      const data = (await response.json().catch(() => ({}))) as GoogleErrorResponse;
+      const data = error ?? {};
       return NextResponse.json(
         {
           error: googleBooksError(response.status, data, Boolean(apiKey)),
