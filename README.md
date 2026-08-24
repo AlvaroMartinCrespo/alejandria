@@ -42,12 +42,13 @@ Si no creas `.env.local`, la aplicación funciona igualmente y conserva los libr
    | `publishedYear` | Integer | opcional |
    | `pageCount` | Integer | opcional |
    | `synopsis` | String (largo) | opcional |
-   | `status` | Enum: `to_read`, `reading`, `read`, `favorite` | requerido |
+  | `status` | Enum: `to_read`, `reading`, `read` | requerido |
+  | `favorite` | Boolean | independiente del estado de lectura |
    | `order` | Integer | opcional |
    | `rating` | Integer (0–5) | opcional |
    | `finishedYear` | Integer | opcional |
    | `addedAt` | Datetime | requerido |
-  | `currentPage` | Integer | opcional, progreso actual |
+  | `progress` | Integer (0–100) | porcentaje leído |
   | `notes` | String (largo) | opcional, notas personales |
 
 5. En **Permisos** de la colección, NO actives acceso público de lectura/escritura — todo el acceso pasará por las rutas API del propio servidor Next.js usando la API key.

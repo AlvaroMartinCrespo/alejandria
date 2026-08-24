@@ -21,7 +21,7 @@ export function BookRow({
   onMoveUp?: () => void;
   onMoveDown?: () => void;
 }) {
-  const { setStatus } = useLibrary();
+  const { setStatus, toggleFavorite } = useLibrary();
 
   return (
     <article
@@ -49,6 +49,15 @@ export function BookRow({
           {book.rating !== null && <span className="rating">★ {book.rating}</span>}
         </div>
       </div>
+      <button
+        className={`favorite-button${book.favorite ? " active" : ""}`}
+        onClick={() => void toggleFavorite(book.$id)}
+        aria-label={book.favorite ? `Quitar ${book.title} de favoritos` : `Añadir ${book.title} a favoritos`}
+        aria-pressed={book.favorite}
+        title={book.favorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+      >
+        <span aria-hidden="true">{book.favorite ? "★" : "☆"}</span>
+      </button>
       <details className="status-control">
         <summary aria-label={`Cambiar estado de ${book.title}`}>
           {STATUS_LABELS[book.status]} <span aria-hidden="true">⌄</span>

@@ -11,7 +11,7 @@ import type { BookStatus } from "@/types/book";
 export default function BookDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { books, loading, updateBook, setStatus, removeBook } = useLibrary();
+  const { books, loading, updateBook, setStatus, toggleFavorite, removeBook } = useLibrary();
   const [saved, setSaved] = useState(false);
   const book = books.find((item) => item.$id === id);
 
@@ -30,13 +30,19 @@ export default function BookDetailPage() {
       <section className="detail-hero">
         <div className="detail-cover"><BookCover title={book.title} url={book.coverUrl} priority /></div>
         <div className="detail-title">
-          <span className={`status-chip ${book.status}`}>{STATUS_LABELS[book.status]}</span>
+          <div className="detail-chips">
+            <span className={`status-chip ${book.status}`}>{STATUS_LABELS[book.status]}</span>
+            {book.favorite && <span className="status-chip favorite">Favorito</span>}
+          </div>
           <h1>{book.title}</h1>
           <p>{book.authors.join(", ")}</p>
           <div className="status-actions">
             {(Object.entries(STATUS_LABELS) as [BookStatus, string][]).filter(([status]) => status !== book.status).map(([status, label]) => (
               <button key={status} className="button secondary compact" onClick={() => void setStatus(book.$id, status)}>{label}</button>
             ))}
+            <button className={`button secondary compact favorite-toggle${book.favorite ? " active" : ""}`} onClick={() => void toggleFavorite(book.$id)}>
+              <span aria-hidden="true">{book.favorite ? "★" : "☆"}</span>{book.favorite ? "Quitar favorito" : "Favorito"}
+            </button>
           </div>
         </div>
       </section>
@@ -45,7 +51,7 @@ export default function BookDetailPage() {
         <div><span>Publicado</span><strong>{book.publishedYear ?? "—"}</strong></div>
         <div><span>Extensión</span><strong>{book.pageCount ? `${book.pageCount} páginas` : "—"}</strong></div>
         <div className="rating-fact"><span>Tu puntuación</span><div>{[1, 2, 3, 4, 5].map((rating) => <button key={rating} className={(book.rating ?? 0) >= rating ? "selected" : ""} onClick={() => void save({ rating })} aria-label={`${rating} estrellas`}>★</button>)}</div></div>
-        {(book.status === "read" || book.status === "favorite") && <label><span>Terminado en</span><input type="number" min="1900" max="2100" value={book.finishedYear ?? new Date().getFullYear()} onChange={(event) => void save({ finishedYear: Number(event.target.value) })} /></label>}
+        {book.status === "read" && <label><span>Terminado en</span><input type="number" min="1900" max="2100" value={book.finishedYear ?? new Date().getFullYear()} onChange={(event) => void save({ finishedYear: Number(event.target.value) })} /></label>}
       </section>
 
       <div className="detail-columns">

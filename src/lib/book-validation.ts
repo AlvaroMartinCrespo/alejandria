@@ -1,6 +1,6 @@
 import type { Book, BookStatus, GoogleBookResult } from "@/types/book";
 
-const STATUSES = new Set<BookStatus>(["to_read", "reading", "read", "favorite"]);
+const STATUSES = new Set<BookStatus>(["to_read", "reading", "read"]);
 
 function optionalInteger(value: unknown, minimum = 0, maximum = Number.MAX_SAFE_INTEGER) {
   if (value === null || value === undefined) return null;
@@ -14,6 +14,11 @@ function text(value: unknown, maximum: number, fallback = "") {
   if (value === undefined || value === null) return fallback;
   if (typeof value !== "string") throw new Error("Texto no válido");
   return value.trim().slice(0, maximum);
+}
+
+function boolean(value: unknown) {
+  if (typeof value !== "boolean") throw new Error("Valor booleano no válido");
+  return value;
 }
 
 function authors(value: unknown) {
@@ -70,10 +75,11 @@ export function parseBookChanges(value: unknown): Partial<Omit<Book, "$id" | "go
     }
     changes.status = input.status as BookStatus;
   }
+  if ("favorite" in input) changes.favorite = boolean(input.favorite);
   if ("order" in input) changes.order = optionalInteger(input.order);
   if ("rating" in input) changes.rating = optionalInteger(input.rating, 0, 5);
   if ("finishedYear" in input) changes.finishedYear = optionalInteger(input.finishedYear, 1900, 2100);
-  if ("currentPage" in input) changes.currentPage = optionalInteger(input.currentPage);
+  if ("progress" in input) changes.progress = optionalInteger(input.progress, 0, 100) ?? 0;
   if ("notes" in input) changes.notes = text(input.notes, 50000);
 
   return changes;

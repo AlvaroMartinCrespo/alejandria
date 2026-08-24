@@ -13,6 +13,7 @@ function ShellContent({ children }: { children: ReactNode }) {
   const { books, storageMode, notice, clearNotice } = useLibrary();
   const [addOpen, setAddOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase("es"));
   const results = deferredQuery
@@ -43,17 +44,25 @@ function ShellContent({ children }: { children: ReactNode }) {
           <span className="brand-mark">A</span>
           <span>Alejandría</span>
         </Link>
-        <nav className="main-nav" aria-label="Navegación principal">
+        <nav className={`main-nav${menuOpen ? " open" : ""}`} aria-label="Navegación principal">
           {links.map(([href, icon, label]) => (
-            <Link key={href} href={href} className={pathname === href ? "active" : ""}>
+            <Link key={href} href={href} className={pathname === href ? "active" : ""} onClick={() => setMenuOpen(false)}>
               <span aria-hidden="true">{icon}</span>{label}
             </Link>
           ))}
         </nav>
         <div className="header-actions">
           <button className="icon-button" onClick={() => setSearchOpen(true)} aria-label="Buscar en mi biblioteca">⌕</button>
-          <button className="button primary" onClick={() => setAddOpen(true)}>
+          <button className="button primary" onClick={() => setAddOpen(true)} aria-label="Añadir libro">
             <span aria-hidden="true">＋</span><span className="desktop-label">Añadir libro</span>
+          </button>
+          <button
+            className="icon-button menu-button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={menuOpen}
+          >
+            <span aria-hidden="true">{menuOpen ? "×" : "☰"}</span>
           </button>
         </div>
       </header>

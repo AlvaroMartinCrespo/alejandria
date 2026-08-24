@@ -96,6 +96,44 @@ async function ensureIndex(key, attributes) {
   console.log(`+ índice ${key}`);
 }
 
+async function migrateBooks() {
+  let offset = 0;
+  let migrated = 0;
+
+  while (true) {
+    const queries = new URLSearchParams();
+    queries.append("queries[]", JSON.stringify({ method: "limit", values: [100] }));
+    queries.append("queries[]", JSON.stringify({ method: "offset", values: [offset] }));
+    const result = await request(
+      `/databases/${databaseId}/collections/${collectionId}/documents?${queries}`,
+    );
+
+    for (const document of result.documents) {
+      const changes = {};
+      if (document.status === "favorite") {
+        changes.status = "read";
+        changes.favorite = true;
+      }
+      if (document.progress === undefined || document.progress === null) {
+        changes.progress = document.pageCount && document.currentPage
+          ? Math.min(100, Math.round(document.currentPage / document.pageCount * 100))
+          : 0;
+      }
+      if (!Object.keys(changes).length) continue;
+      await request(
+        `/databases/${databaseId}/collections/${collectionId}/documents/${document.$id}`,
+        { method: "PATCH", body: JSON.stringify({ data: changes }) },
+      );
+      migrated += 1;
+    }
+
+    offset += result.documents.length;
+    if (offset >= result.total || !result.documents.length) break;
+  }
+
+  console.log(migrated ? `+ ${migrated} libros migrados` : "✓ datos actualizados");
+}
+
 await createIfMissing(
   `/databases/${databaseId}`,
   "/databases",
@@ -128,9 +166,17 @@ const integerAttributes = [
   { key: "rating", required: false, min: 0, max: 5, array: false },
   { key: "finishedYear", required: false, min: 1900, max: 2100, array: false },
   { key: "currentPage", required: false, min: 0, array: false },
+  { key: "progress", required: false, min: 0, max: 100, array: false },
 ];
 
 for (const attribute of integerAttributes) await ensureAttribute("integer", attribute);
+
+await ensureAttribute("boolean", {
+  key: "favorite",
+  required: false,
+  default: false,
+  array: false,
+});
 
 await ensureAttribute("enum", {
   key: "status",
@@ -147,6 +193,8 @@ for (const [key, attributes] of [
 ]) {
   await ensureIndex(key, attributes);
 }
+
+await migrateBooks();
 
 console.log("\nAppwrite listo. Usa estos valores en .env.local:");
 console.log(`APPWRITE_DATABASE_ID=${databaseId}`);

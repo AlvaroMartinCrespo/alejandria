@@ -36,11 +36,12 @@ export async function POST(request: Request) {
       {
         ...result,
         status: "to_read",
+        favorite: false,
         order: Date.now(),
         rating: null,
         finishedYear: null,
         addedAt: new Date().toISOString(),
-        currentPage: 0,
+        progress: 0,
         notes: "",
       },
     );

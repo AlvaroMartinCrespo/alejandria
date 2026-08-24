@@ -4,10 +4,22 @@ export const STATUS_LABELS: Record<BookStatus, string> = {
   to_read: "Quiero leer",
   reading: "Leyendo",
   read: "Leído",
-  favorite: "Favorito",
 };
 
-export function normalizeBook(value: Partial<Book> & { $id: string; title: string }): Book {
+type BookInput = Omit<Partial<Book>, "status"> & {
+  $id: string;
+  title: string;
+  status?: BookStatus | "favorite";
+  currentPage?: number | null;
+};
+
+export function normalizeBook(value: BookInput): Book {
+  const legacyFavorite = value.status === "favorite";
+  const status: BookStatus = value.status === "favorite" ? "read" : value.status ?? "to_read";
+  const legacyProgress = value.pageCount && value.currentPage
+    ? Math.round(value.currentPage / value.pageCount * 100)
+    : 0;
+
   return {
     $id: value.$id,
     googleBooksId: value.googleBooksId ?? "",
@@ -17,12 +29,13 @@ export function normalizeBook(value: Partial<Book> & { $id: string; title: strin
     publishedYear: value.publishedYear ?? null,
     pageCount: value.pageCount ?? null,
     synopsis: value.synopsis ?? "",
-    status: value.status ?? "to_read",
+    status,
+    favorite: legacyFavorite || value.favorite === true,
     order: value.order ?? null,
     rating: value.rating ?? null,
     finishedYear: value.finishedYear ?? null,
     addedAt: value.addedAt ?? new Date().toISOString(),
-    currentPage: value.currentPage ?? 0,
+    progress: Math.max(0, Math.min(100, value.progress ?? legacyProgress)),
     notes: value.notes ?? "",
   };
 }

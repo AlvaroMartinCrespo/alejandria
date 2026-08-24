@@ -5,7 +5,7 @@ import { useLibrary } from "@/components/library-provider";
 
 export default function StatisticsPage() {
   const { books, restoreBackup } = useLibrary();
-  const completed = books.filter((book) => book.status === "read" || book.status === "favorite");
+  const completed = books.filter((book) => book.status === "read");
   const pages = completed.reduce((sum, book) => sum + (book.pageCount ?? 0), 0);
   const rated = completed.filter((book) => book.rating !== null);
   const average = rated.length ? rated.reduce((sum, book) => sum + (book.rating ?? 0), 0) / rated.length : 0;
@@ -56,7 +56,7 @@ export default function StatisticsPage() {
         {years.length ? <div className="bars">
           {years.map((year) => {
             const count = completed.filter((book) => book.finishedYear === year).length;
-            return <div className="bar-column" key={year}><strong>{count}</strong><div><i style={{ height: `${Math.max(12, count / maxYearCount * 100)}%` }} /></div><span>{year}</span></div>;
+            return <div className="bar-column" key={year}><span>{year}</span><div><i style={{ width: `${Math.max(8, count / maxYearCount * 100)}%` }} /></div><strong>{count} {count === 1 ? "libro" : "libros"}</strong></div>;
           })}
         </div> : <div className="big-empty compact"><p>Los años aparecerán cuando termines tus primeras lecturas.</p></div>}
       </section>

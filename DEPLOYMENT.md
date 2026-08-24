@@ -47,6 +47,8 @@ La URL no listada no es autenticación. Si la biblioteca debe ser privada, activ
 
 ## 5. Verificar el despliegue
 
+El archivo `vercel.json` programa una llamada diaria a `/api/health`. Esa ruta consulta un documento de Appwrite y evita que la base de datos quede inactiva. Los cron jobs se activan al desplegar la rama de producción en Vercel.
+
 Ejecuta la comprobación sin dependencias adicionales:
 
 ```bash

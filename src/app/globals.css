@@ -165,6 +165,10 @@ summary:focus-visible {
   gap: 8px;
 }
 
+.icon-button.menu-button {
+  display: none;
+}
+
 .button,
 .icon-button,
 .key-button,
@@ -283,6 +287,30 @@ summary:focus-visible {
   font-family: Georgia, serif;
   font-size: 18px;
   line-height: 1.55;
+}
+
+.quote-heading {
+  justify-content: flex-start;
+}
+
+.quote-heading blockquote {
+  max-width: 850px;
+  margin: 0;
+}
+
+.quote-heading p {
+  margin: 0 0 14px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(30px, 5vw, 58px);
+  line-height: 1.08;
+}
+
+.quote-heading cite {
+  color: var(--acid);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .now-reading {
@@ -497,7 +525,12 @@ summary:focus-visible {
   animation: reveal .5s .16s ease-out both;
 }
 
-.library-section summary {
+.library-section:has(.status-control[open]) {
+  position: relative;
+  z-index: 20;
+}
+
+.library-section > summary {
   height: 78px;
   display: flex;
   align-items: center;
@@ -507,29 +540,29 @@ summary:focus-visible {
   list-style: none;
 }
 
-.library-section summary::-webkit-details-marker {
+.library-section > summary::-webkit-details-marker {
   display: none;
 }
 
-.library-section summary > span {
+.library-section > summary > span {
   display: flex;
   align-items: baseline;
   gap: 13px;
 }
 
-.library-section summary strong {
+.library-section > summary strong {
   font-family: Georgia, serif;
   font-size: 24px;
   font-weight: 400;
 }
 
-.library-section summary small {
+.library-section > summary small {
   color: var(--subtle);
   font-size: 11px;
   text-transform: uppercase;
 }
 
-.library-section summary > i {
+.library-section > summary > i {
   width: 32px;
   height: 32px;
   display: grid;
@@ -541,7 +574,7 @@ summary:focus-visible {
   transition: transform .25s;
 }
 
-.library-section[open] summary > i {
+.library-section[open] > summary > i {
   transform: rotate(180deg);
 }
 
@@ -553,12 +586,16 @@ summary:focus-visible {
   position: relative;
   min-height: 118px;
   display: grid;
-  grid-template-columns: auto 64px minmax(0, 1fr) auto;
+  grid-template-columns: auto 64px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 18px;
   padding: 13px 24px;
   border-bottom: 1px solid var(--line-soft);
   transition: background .2s, opacity .2s;
+}
+
+.book-row:not([draggable="true"]) {
+  grid-template-columns: 64px minmax(0, 1fr) auto auto;
 }
 
 .book-row:last-child {
@@ -571,6 +608,10 @@ summary:focus-visible {
 
 .book-row[draggable="true"]:active {
   opacity: .55;
+}
+
+.book-row:has(.status-control[open]) {
+  z-index: 1;
 }
 
 .drag-handle {
@@ -642,6 +683,24 @@ summary:focus-visible {
 
 .book-meta-inline .rating {
   color: var(--gold);
+}
+
+.favorite-button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #111312;
+  font-size: 18px;
+}
+
+.favorite-button:hover,
+.favorite-button.active {
+  color: var(--gold);
+  border-color: #5c5033;
 }
 
 .sort-field select {
@@ -1184,7 +1243,7 @@ textarea::placeholder {
 }
 
 .year-group .book-row {
-  grid-template-columns: 64px minmax(0, 1fr) auto;
+  grid-template-columns: 64px minmax(0, 1fr) auto auto;
 }
 
 .page-loading {
@@ -1371,42 +1430,42 @@ textarea::placeholder {
 }
 
 .bars {
-  height: 300px;
-  display: flex;
-  align-items: flex-end;
+  display: grid;
   gap: 18px;
-  padding: 24px 30px 20px;
+  padding: 28px 30px;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   background: #101212;
 }
 
 .bar-column {
-  height: 100%;
-  min-width: 55px;
-  flex: 1;
+  min-width: 0;
   display: grid;
-  grid-template-rows: 22px 1fr 22px;
-  gap: 7px;
+  grid-template-columns: 60px minmax(0, 1fr) 80px;
+  align-items: center;
+  gap: 14px;
   color: var(--muted);
   font-size: 10px;
   text-align: center;
 }
 
 .bar-column > div {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
+  height: 9px;
   overflow: hidden;
-  border-bottom: 1px solid #343936;
-  background: repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,.035) 40px);
+  background: #272c29;
 }
 
 .bar-column i {
-  width: 100%;
   display: block;
+  height: 100%;
   background: var(--acid);
-  transition: height .5s;
+  transition: width .5s;
+}
+
+.bar-column strong {
+  color: var(--ink);
+  font-size: 11px;
+  text-align: left;
 }
 
 .backup-note {
@@ -1564,6 +1623,12 @@ textarea::placeholder {
   border-color: #563832;
 }
 
+.detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
 .status-chip.read {
   color: #b8d5f3;
   border-color: #354453;
@@ -1573,6 +1638,11 @@ textarea::placeholder {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
+}
+
+.favorite-toggle.active {
+  color: var(--gold);
+  border-color: #5c5033;
 }
 
 .detail-facts {
@@ -1757,13 +1827,17 @@ textarea::placeholder {
   }
 
   .main-nav {
-    position: fixed;
+    position: absolute;
+    top: calc(100% + 8px);
     right: 16px;
-    bottom: max(14px, env(safe-area-inset-bottom));
     left: 16px;
-    z-index: 50;
-    justify-content: space-around;
+    display: none;
+    padding: 7px;
     box-shadow: 0 12px 40px rgba(0,0,0,.5);
+  }
+
+  .main-nav.open {
+    display: flex;
   }
 
   .main-nav a {
@@ -1771,8 +1845,12 @@ textarea::placeholder {
     justify-content: center;
   }
 
+  .icon-button.menu-button {
+    display: grid;
+  }
+
   .page-shell {
-    padding-bottom: 120px;
+    padding-bottom: 96px;
   }
 
   .stat-grid {
@@ -1791,9 +1869,6 @@ textarea::placeholder {
     gap: 35px;
   }
 
-  .app-footer {
-    padding-bottom: 78px;
-  }
 }
 
 @media (max-width: 680px) {
@@ -1803,7 +1878,6 @@ textarea::placeholder {
     padding-left: max(16px, env(safe-area-inset-left));
   }
 
-  .brand > span:last-child,
   .desktop-label {
     display: none;
   }
@@ -1816,10 +1890,9 @@ textarea::placeholder {
 
   .main-nav a {
     min-height: 44px;
-    flex-direction: column;
-    gap: 1px;
-    padding: 3px 5px;
-    font-size: 9px;
+    gap: 6px;
+    padding: 3px 4px;
+    font-size: 10px;
   }
 
   .main-nav a span {
@@ -1841,6 +1914,14 @@ textarea::placeholder {
   .archive-heading h1,
   .stats-heading h1 {
     font-size: 47px;
+  }
+
+  .quote-heading {
+    min-height: 150px;
+  }
+
+  .quote-heading p {
+    font-size: 32px;
   }
 
   .heading-note {
@@ -1877,12 +1958,12 @@ textarea::placeholder {
     margin-top: 18px;
   }
 
-  .library-section summary {
+  .library-section > summary {
     height: 70px;
     padding: 0 17px;
   }
 
-  .library-section summary strong {
+  .library-section > summary strong {
     font-size: 21px;
   }
 
@@ -1894,6 +1975,16 @@ textarea::placeholder {
 
   .book-row:not([draggable="true"]) {
     grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .book-row-copy {
+    padding-right: 42px;
+  }
+
+  .favorite-button {
+    position: absolute;
+    top: 12px;
+    right: 12px;
   }
 
   .book-row .book-cover {
@@ -1930,7 +2021,7 @@ textarea::placeholder {
   .status-menu {
     right: auto;
     left: 0;
-    width: 100%;
+    width: 150px;
   }
 
   .read-archive-link {
@@ -2040,13 +2131,13 @@ textarea::placeholder {
   }
 
   .bars {
-    gap: 8px;
-    padding: 20px 12px;
-    overflow-x: auto;
+    gap: 16px;
+    padding: 22px 16px;
   }
 
   .bar-column {
-    min-width: 48px;
+    grid-template-columns: 42px minmax(0, 1fr) 58px;
+    gap: 9px;
   }
 
   .backup-note {

@@ -7,6 +7,21 @@ import { BookRow } from "@/components/book-row";
 import { useLibrary } from "@/components/library-provider";
 import { LibrarySkeleton } from "@/components/library-skeleton";
 
+const DAILY_QUOTES = [
+  { text: "El que lee mucho y anda mucho, ve mucho y sabe mucho.", author: "Miguel de Cervantes" },
+  { text: "Siempre imaginé que el paraíso sería algún tipo de biblioteca.", author: "Jorge Luis Borges" },
+  { text: "La lectura es a la mente lo que el ejercicio al cuerpo.", author: "Joseph Addison" },
+  { text: "No hay amigo tan leal como un libro.", author: "Ernest Hemingway" },
+  { text: "Lee y conducirás, no leas y serás conducido.", author: "Santa Teresa de Jesús" },
+  { text: "Los libros son una magia única y portátil.", author: "Stephen King" },
+  { text: "Una habitación sin libros es como un cuerpo sin alma.", author: "Cicerón" },
+] as const;
+
+function getDailyQuote() {
+  const day = Math.floor(Date.now() / 86_400_000);
+  return DAILY_QUOTES[day % DAILY_QUOTES.length];
+}
+
 export default function Home() {
   const { books, loading, updateBook, setStatus, reorderToRead } = useLibrary();
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -15,12 +30,11 @@ export default function Home() {
   const toRead = books
     .filter((book) => book.status === "to_read")
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  const favorites = books.filter((book) => book.status === "favorite");
+  const favorites = books.filter((book) => book.favorite);
   const read = books.filter((book) => book.status === "read");
   const surprise = toRead.find((book) => book.$id === surpriseId);
-  const progress = reading?.pageCount
-    ? Math.min(100, Math.round(((reading.currentPage ?? 0) / reading.pageCount) * 100))
-    : 0;
+  const quote = getDailyQuote();
+  const progress = reading?.progress ?? 0;
 
   if (loading) {
     return <LibrarySkeleton />;
@@ -28,12 +42,11 @@ export default function Home() {
 
   return (
     <>
-      <section className="page-heading home-heading">
-        <div>
-          <p className="eyebrow">Tu espacio de lectura</p>
-          <h1>Buenas lecturas<br />viven aquí.</h1>
-        </div>
-        <p className="heading-note">Una biblioteca clara para elegir mejor qué viene después.</p>
+      <section className="page-heading quote-heading">
+        <blockquote>
+          <p>“{quote.text}”</p>
+          <cite>{quote.author}</cite>
+        </blockquote>
       </section>
 
       {reading ? (
@@ -51,15 +64,15 @@ export default function Home() {
                 <div><span>Progreso</span><strong>{progress}%</strong></div>
                 <div className="progress-track"><i style={{ width: `${progress}%` }} /></div>
                 <label>
-                  Página
+                  Porcentaje leído
                   <input
                     type="number"
                     min="0"
-                    max={reading.pageCount ?? undefined}
-                    value={reading.currentPage ?? 0}
-                    onChange={(event) => void updateBook(reading.$id, { currentPage: Number(event.target.value) })}
+                    max="100"
+                    value={progress}
+                    onChange={(event) => void updateBook(reading.$id, { progress: Number(event.target.value) })}
                   />
-                  {reading.pageCount ? ` de ${reading.pageCount}` : ""}
+                  %
                 </label>
               </div>
             </div>

@@ -26,6 +26,7 @@ interface LibraryContextValue {
   addBook: (result: GoogleBookResult) => Promise<Book>;
   updateBook: (id: string, changes: BookChanges) => Promise<void>;
   setStatus: (id: string, status: BookStatus) => Promise<void>;
+  toggleFavorite: (id: string) => Promise<void>;
   removeBook: (id: string) => Promise<void>;
   reorderToRead: (sourceId: string, targetId: string) => Promise<void>;
   restoreBackup: (value: unknown) => Promise<void>;
@@ -141,6 +142,12 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     await updateBook(id, changes);
   }
 
+  async function toggleFavorite(id: string) {
+    const book = books.find((item) => item.$id === id);
+    if (!book) return;
+    await updateBook(id, { favorite: !book.favorite });
+  }
+
   async function removeBook(id: string) {
     const previous = books;
     setBooks((current) => current.filter((book) => book.$id !== id));
@@ -202,10 +209,11 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
           pageCount: incoming.pageCount,
           synopsis: incoming.synopsis,
           status: incoming.status,
+          favorite: incoming.favorite,
           order: incoming.order,
           rating: incoming.rating,
           finishedYear: incoming.finishedYear,
-          currentPage: incoming.currentPage,
+          progress: incoming.progress,
           notes: incoming.notes,
         };
 
@@ -253,6 +261,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         addBook,
         updateBook,
         setStatus,
+        toggleFavorite,
         removeBook,
         reorderToRead,
         restoreBackup,
