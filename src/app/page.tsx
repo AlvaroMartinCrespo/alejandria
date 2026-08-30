@@ -26,7 +26,7 @@ export default function Home() {
   const { books, loading, updateBook, setStatus, reorderToRead } = useLibrary();
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [surpriseId, setSurpriseId] = useState<string | null>(null);
-  const reading = books.find((book) => book.status === "reading");
+  const readingList = books.filter((book) => book.status === "reading");
   const toRead = books
     .filter((book) => book.status === "to_read")
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -34,7 +34,6 @@ export default function Home() {
   const read = books.filter((book) => book.status === "read");
   const surprise = toRead.find((book) => book.$id === surpriseId);
   const quote = getDailyQuote();
-  const progress = reading?.progress ?? 0;
 
   if (loading) {
     return <LibrarySkeleton />;
@@ -49,33 +48,40 @@ export default function Home() {
         </blockquote>
       </section>
 
-      {reading ? (
+      {readingList.length > 0 ? (
         <section className="now-reading">
           <div className="section-label"><span>Leyendo ahora</span><i /></div>
-          <div className="reading-layout">
-            <Link href={`/libro/${reading.$id}`} className="reading-cover-link">
-              <BookCover title={reading.title} url={reading.coverUrl} priority />
-            </Link>
-            <div className="reading-copy">
-              <p>{reading.authors.join(", ")}</p>
-              <Link href={`/libro/${reading.$id}`}><h2>{reading.title}</h2></Link>
-              {reading.synopsis && <p className="reading-synopsis">{reading.synopsis}</p>}
-              <div className="progress-block">
-                <div><span>Progreso</span><strong>{progress}%</strong></div>
-                <div className="progress-track"><i style={{ width: `${progress}%` }} /></div>
-                <label>
-                  Porcentaje leído
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={progress}
-                    onChange={(event) => void updateBook(reading.$id, { progress: Number(event.target.value) })}
-                  />
-                  %
-                </label>
-              </div>
-            </div>
+          <div className="now-reading-list">
+            {readingList.map((reading) => {
+              const progress = reading.progress ?? 0;
+              return (
+                <div className="reading-layout" key={reading.$id}>
+                  <Link href={`/libro/${reading.$id}`} className="reading-cover-link">
+                    <BookCover title={reading.title} url={reading.coverUrl} priority />
+                  </Link>
+                  <div className="reading-copy">
+                    <p>{reading.authors.join(", ")}</p>
+                    <Link href={`/libro/${reading.$id}`}><h2>{reading.title}</h2></Link>
+                    {reading.synopsis && <p className="reading-synopsis">{reading.synopsis}</p>}
+                    <div className="progress-block">
+                      <div><span>Progreso</span><strong>{progress}%</strong></div>
+                      <div className="progress-track"><i style={{ width: `${progress}%` }} /></div>
+                      <label>
+                        Porcentaje leído
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={progress}
+                          onChange={(event) => void updateBook(reading.$id, { progress: Number(event.target.value) })}
+                        />
+                        %
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       ) : (

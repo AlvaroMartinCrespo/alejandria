@@ -135,10 +135,6 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       order: status === "to_read" ? Date.now() : null,
     };
 
-    const currentReading = books.find((book) => book.status === "reading" && book.$id !== id);
-    if (status === "reading" && currentReading) {
-      await updateBook(currentReading.$id, { status: "to_read", order: Date.now() });
-    }
     await updateBook(id, changes);
   }
 

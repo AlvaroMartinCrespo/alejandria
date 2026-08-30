@@ -351,15 +351,24 @@ summary:focus-visible {
   background: var(--acid);
 }
 
-.reading-layout {
+.now-reading-list {
   position: relative;
   z-index: 1;
+}
+
+.reading-layout {
   display: grid;
   grid-template-columns: 154px 1fr;
   gap: 42px;
   align-items: end;
   max-width: 810px;
   margin-top: 22px;
+}
+
+.reading-layout + .reading-layout {
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 1px solid #39403b;
 }
 
 .reading-cover-link .book-cover {
