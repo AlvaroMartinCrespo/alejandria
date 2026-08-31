@@ -58,9 +58,11 @@ export function BookRow({
       >
         <span aria-hidden="true">{book.favorite ? "★" : "☆"}</span>
       </button>
-      <details className="status-control">
+      <details className={`status-control ${book.status}`}>
         <summary aria-label={`Cambiar estado de ${book.title}`}>
-          {STATUS_LABELS[book.status]} <span aria-hidden="true">⌄</span>
+          <i className="status-dot" aria-hidden="true" />
+          <span>{STATUS_LABELS[book.status]}</span>
+          <span aria-hidden="true">⌄</span>
         </summary>
         <div className="status-menu">
           {(Object.entries(STATUS_LABELS) as [BookStatus, string][])
@@ -68,12 +70,13 @@ export function BookRow({
             .map(([value, label]) => (
               <button
                 key={value}
+                className={`status-option ${value}`}
                 onClick={(event) => {
                   event.currentTarget.closest("details")?.removeAttribute("open");
                   void setStatus(book.$id, value).catch(() => undefined);
                 }}
               >
-                {label}
+                <i className="status-dot" aria-hidden="true" />{label}
               </button>
             ))}
         </div>

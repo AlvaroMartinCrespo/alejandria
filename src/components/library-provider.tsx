@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { googleResultToBook, normalizeBook } from "@/lib/book-utils";
+import { parseBookBackup } from "@/lib/book-validation";
 import type { Book, BookStatus, GoogleBookResult } from "@/types/book";
 
 const STORAGE_KEY = "alejandria-v1";
@@ -20,7 +21,7 @@ type BookChanges = Partial<Omit<Book, "$id" | "googleBooksId" | "addedAt">>;
 interface LibraryContextValue {
   books: Book[];
   loading: boolean;
-  storageMode: "appwrite" | "local";
+  storageMode: "supabase" | "local";
   notice: { type: "success" | "error"; message: string } | null;
   clearNotice: () => void;
   addBook: (result: GoogleBookResult) => Promise<Book>;
@@ -37,7 +38,7 @@ const LibraryContext = createContext<LibraryContextValue | null>(null);
 export function LibraryProvider({ children }: { children: ReactNode }) {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
-  const [storageMode, setStorageMode] = useState<"appwrite" | "local">("local");
+  const [storageMode, setStorageMode] = useState<"supabase" | "local">("local");
   const [notice, setNotice] = useState<LibraryContextValue["notice"]>(null);
 
   function showNotice(type: "success" | "error", message: string) {
@@ -48,11 +49,11 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const loadLibrary = useEffectEvent(async () => {
     try {
       const response = await fetch("/api/books", { cache: "no-store" });
-      if (!response.ok) throw new Error("Appwrite no está configurado");
+      if (!response.ok) throw new Error("Supabase no está configurado");
       const data = (await response.json()) as { books: Book[] };
       startTransition(() => {
         setBooks(data.books.map(normalizeBook));
-        setStorageMode("appwrite");
+        setStorageMode("supabase");
         setLoading(false);
       });
     } catch {
@@ -90,7 +91,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       throw new Error("Este libro ya está en tu biblioteca.");
     }
 
-    if (storageMode === "appwrite") {
+    if (storageMode === "supabase") {
       const response = await fetch("/api/books", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -114,7 +115,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     setBooks((current) =>
       current.map((book) => (book.$id === id ? { ...book, ...changes } : book)),
     );
-    if (storageMode === "appwrite") {
+    if (storageMode === "supabase") {
       const response = await fetch(`/api/books/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -147,7 +148,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   async function removeBook(id: string) {
     const previous = books;
     setBooks((current) => current.filter((book) => book.$id !== id));
-    if (storageMode === "appwrite") {
+    if (storageMode === "supabase") {
       const response = await fetch(`/api/books/${id}`, { method: "DELETE" });
       if (!response.ok) {
         setBooks(previous);
@@ -170,13 +171,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   }
 
   async function restoreBackup(value: unknown) {
-    if (!Array.isArray(value)) throw new Error("El archivo no contiene una biblioteca válida.");
-    const imported = value
-      .filter((item): item is Partial<Book> & { title: string } =>
-        typeof item === "object" && item !== null && typeof item.title === "string",
-      )
-      .map((item) => normalizeBook({ ...item, $id: item.$id || crypto.randomUUID() }));
-    if (!imported.length) throw new Error("No se encontraron libros válidos en el archivo.");
+    const imported = parseBookBackup(value);
 
     if (storageMode === "local") {
       setBooks((current) => {
@@ -191,57 +186,18 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      for (const incoming of imported) {
-        const existing = books.find(
-          (book) =>
-            (incoming.googleBooksId && book.googleBooksId === incoming.googleBooksId) ||
-            book.$id === incoming.$id,
-        );
-        const changes: BookChanges = {
-          title: incoming.title,
-          authors: incoming.authors,
-          coverUrl: incoming.coverUrl,
-          publishedYear: incoming.publishedYear,
-          pageCount: incoming.pageCount,
-          synopsis: incoming.synopsis,
-          status: incoming.status,
-          favorite: incoming.favorite,
-          order: incoming.order,
-          rating: incoming.rating,
-          finishedYear: incoming.finishedYear,
-          progress: incoming.progress,
-          notes: incoming.notes,
-        };
-
-        if (existing) {
-          const response = await fetch(`/api/books/${existing.$id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(changes),
-          });
-          if (!response.ok) throw new Error();
-        } else {
-          const createdResponse = await fetch("/api/books", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(incoming),
-          });
-          if (!createdResponse.ok) throw new Error();
-          const created = normalizeBook((await createdResponse.json()) as Book);
-          const updateResponse = await fetch(`/api/books/${created.$id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(changes),
-          });
-          if (!updateResponse.ok) throw new Error();
-        }
-      }
+      const importedResponse = await fetch("/api/books/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ books: imported }),
+      });
+      if (!importedResponse.ok) throw new Error();
       const refreshed = await fetch("/api/books", { cache: "no-store" });
       const data = (await refreshed.json()) as { books: Book[] };
       setBooks(data.books.map(normalizeBook));
-      showNotice("success", `${imported.length} libros restaurados en Appwrite.`);
+      showNotice("success", `${imported.length} libros restaurados en Supabase.`);
     } catch {
-      showNotice("error", "La restauración quedó incompleta. Revisa Appwrite e inténtalo de nuevo.");
+      showNotice("error", "La restauración quedó incompleta. Revisa Supabase e inténtalo de nuevo.");
       throw new Error("No se pudo completar la restauración.");
     }
   }

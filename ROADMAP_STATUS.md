@@ -6,16 +6,16 @@ Actualizado: 24 de agosto de 2026.
 
 - [x] Proyecto Next.js con TypeScript, App Router y Tailwind CSS.
 - [x] Plantilla de variables en `.env.local.example`.
-- [ ] Crear el proyecto remoto de Appwrite y obtener sus credenciales.
+- [ ] Crear el proyecto remoto de Supabase y obtener sus credenciales.
 - [ ] Crear o conectar el repositorio de GitHub.
 - [ ] Conectar el repositorio con Vercel.
 
-## Fase 1 - Modelo Appwrite
+## Fase 1 - Modelo Supabase
 
 - [x] Modelo TypeScript completo.
-- [x] Script idempotente `npm run setup:appwrite` para crear base, colección, atributos e índices.
-- [x] Colección configurada por el script sin permisos públicos.
-- [ ] Ejecutar el script con una API key real de Appwrite.
+- [x] Esquema SQL idempotente para crear tabla, restricciones e índices.
+- [x] RLS activado sin acceso público; clave privada limitada al servidor.
+- [ ] Ejecutar `supabase/schema.sql` en un proyecto real.
 
 ## Fases 2 a 4 - Diseño, Google Books y home
 
@@ -54,14 +54,14 @@ Se usa la API nativa del navegador en lugar de `dnd-kit` porque no se pueden ins
 - [x] Skeletons y estados vacíos.
 - [x] Avisos de operaciones y recuperación de errores.
 - [x] Límites globales de carga, error y página no encontrada.
-- [ ] Prueba visual en navegador y prueba completa contra Appwrite real.
+- [ ] Prueba visual en navegador y prueba completa contra Supabase real.
 
 No es posible ejecutar Next.js en este entorno sin `node_modules`, y se ha respetado la restricción de no instalar paquetes.
 
 ## Fase 12 - Despliegue
 
 - [x] Cabeceras HTTP de seguridad y ocultación de `X-Powered-By`.
-- [x] Endpoint `/api/health` para comprobar Appwrite sin exponer secretos.
+- [x] Endpoint `/api/health` para comprobar Supabase sin exponer secretos.
 - [x] Smoke test `npm run check:deploy -- URL` para las rutas de producción.
 - [x] Guía operativa en `DEPLOYMENT.md`.
 - [ ] Configurar las variables reales en Vercel.

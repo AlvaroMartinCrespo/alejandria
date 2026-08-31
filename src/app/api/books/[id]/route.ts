@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
-import {
-  APPWRITE_BOOKS_COLLECTION_ID,
-  APPWRITE_DATABASE_ID,
-  getDatabases,
-} from "@/lib/appwrite";
-import { normalizeBook } from "@/lib/book-utils";
 import { parseBookChanges } from "@/lib/book-validation";
+import { deleteBook, updateBook } from "@/lib/supabase";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -13,13 +8,7 @@ export async function PATCH(request: Request, { params }: Context) {
   try {
     const { id } = await params;
     const changes = parseBookChanges(await request.json());
-    const document = await getDatabases().updateDocument(
-      APPWRITE_DATABASE_ID,
-      APPWRITE_BOOKS_COLLECTION_ID,
-      id,
-      changes,
-    );
-    return NextResponse.json(normalizeBook(document as never));
+    return NextResponse.json(await updateBook(id, changes));
   } catch (error) {
     const message = error instanceof Error ? error.message : "No se pudo actualizar";
     if (error instanceof SyntaxError || message.includes("válid") || message.includes("vacío")) {
@@ -32,11 +21,7 @@ export async function PATCH(request: Request, { params }: Context) {
 export async function DELETE(_request: Request, { params }: Context) {
   try {
     const { id } = await params;
-    await getDatabases().deleteDocument(
-      APPWRITE_DATABASE_ID,
-      APPWRITE_BOOKS_COLLECTION_ID,
-      id,
-    );
+    await deleteBook(id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "No se pudo eliminar";

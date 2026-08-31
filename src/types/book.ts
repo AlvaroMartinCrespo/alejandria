@@ -2,11 +2,11 @@
 export type BookStatus = "to_read" | "reading" | "read";
 
 /**
- * Modelo de un libro, tal y como se guarda en la colección `books` de Appwrite.
+ * Modelo de un libro, tal y como lo utiliza la aplicación.
  * Coincide con la tabla de la Fase 1 del roadmap.
  */
 export interface Book {
-  $id: string; // ID del documento en Appwrite
+  $id: string; // ID estable, compatible con copias históricas de Appwrite
   googleBooksId: string;
   title: string;
   authors: string[];
@@ -22,6 +22,14 @@ export interface Book {
   addedAt: string; // ISO date
   progress: number; // porcentaje leído, de 0 a 100
   notes?: string; // notas personales opcionales
+}
+
+export interface LibraryBackup {
+  format: "alejandria-library-backup";
+  version: 1;
+  exportedAt: string;
+  bookCount: number;
+  books: Book[];
 }
 
 /**

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Check, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { BookCover } from "@/components/book-cover";
 import { BookRow } from "@/components/book-row";
@@ -56,9 +57,29 @@ export default function Home() {
               const progress = reading.progress ?? 0;
               return (
                 <div className="reading-layout" key={reading.$id}>
-                  <Link href={`/libro/${reading.$id}`} className="reading-cover-link">
-                    <BookCover title={reading.title} url={reading.coverUrl} priority />
-                  </Link>
+                  <div className="reading-cover-wrap">
+                    <Link href={`/libro/${reading.$id}`} className="reading-cover-link">
+                      <BookCover title={reading.title} url={reading.coverUrl} priority />
+                    </Link>
+                    <div className="reading-cover-actions" aria-label={`Cambiar estado de ${reading.title}`}>
+                      <button
+                        className="reading-state-button to-read"
+                        onClick={() => void setStatus(reading.$id, "to_read")}
+                        aria-label={`Mover ${reading.title} a Quiero leer`}
+                        title="Mover a Quiero leer"
+                      >
+                        <Undo2 size={17} aria-hidden="true" />
+                      </button>
+                      <button
+                        className="reading-state-button read"
+                        onClick={() => void setStatus(reading.$id, "read")}
+                        aria-label={`Marcar ${reading.title} como terminado`}
+                        title="Marcar como terminado"
+                      >
+                        <Check size={18} aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
                   <div className="reading-copy">
                     <p>{reading.authors.join(", ")}</p>
                     <Link href={`/libro/${reading.$id}`}><h2>{reading.title}</h2></Link>

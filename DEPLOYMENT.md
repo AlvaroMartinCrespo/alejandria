@@ -1,16 +1,21 @@
 # Despliegue en producción
 
-## 1. Preparar Appwrite
+## 1. Exportar Appwrite antes del cambio
 
-1. Crea un proyecto en Appwrite Cloud.
-2. Crea una API key de servidor con permisos de lectura y escritura de bases de datos.
-3. Copia `.env.local.example` a `.env.local` y completa endpoint, project ID y API key.
-4. Ejecuta `npm run setup:appwrite` para crear la base, colección, atributos e índices.
-5. Copia al archivo los IDs que muestra el script si utilizaste los valores predeterminados.
+En la versión todavía conectada a Appwrite, abre **Estadísticas** y pulsa **JSON**. Guarda ese archivo antes de cambiar las variables o desplegar esta versión. La importación nueva acepta tanto ese array antiguo como el backup versionado actual.
 
-La colección se crea sin permisos públicos. La API key solo se utiliza en el servidor.
+El JSON contiene todos los datos funcionales: ID, ID de Google Books, título, autores, portada, publicación, páginas, sinopsis, estado, favorito, orden, puntuación, año de finalización, fecha de alta, progreso y notas.
 
-## 2. Publicar en GitHub
+## 2. Preparar Supabase
+
+1. Crea un proyecto en [Supabase](https://supabase.com/dashboard).
+2. Abre **SQL Editor**, pega el contenido de `supabase/schema.sql` y ejecútalo.
+3. En **Project Settings → API**, copia la URL del proyecto y la clave `service_role`.
+4. Configura `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` en `.env.local` y en Vercel.
+
+La tabla usa RLS sin políticas públicas. La clave `service_role` solo se utiliza en el servidor y nunca debe llevar el prefijo `NEXT_PUBLIC_`.
+
+## 3. Publicar en GitHub
 
 Crea un repositorio vacío y conecta este proyecto:
 
@@ -24,30 +29,33 @@ git push -u origin main
 
 Revisa los archivos antes de confirmar. `.env.local` está ignorado y no debe subirse.
 
-## 3. Crear el proyecto de Vercel
+## 4. Crear el proyecto de Vercel
 
 1. En Vercel, elige **Add New → Project** e importa el repositorio.
 2. Mantén el framework detectado como Next.js y los comandos predeterminados.
 3. Añade estas variables para Production, Preview y Development:
 
 ```text
-APPWRITE_ENDPOINT
-APPWRITE_PROJECT_ID
-APPWRITE_API_KEY
-APPWRITE_DATABASE_ID
-APPWRITE_BOOKS_COLLECTION_ID
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
 GOOGLE_BOOKS_API_KEY
 ```
 
-`GOOGLE_BOOKS_API_KEY` es opcional. Ninguna variable de Appwrite debe llevar el prefijo `NEXT_PUBLIC_`.
+`GOOGLE_BOOKS_API_KEY` es opcional. Ninguna clave privada debe llevar el prefijo `NEXT_PUBLIC_`.
 
-## 4. Proteger el acceso
+## 5. Importar la copia
+
+Despliega la aplicación, abre **Estadísticas → Restaurar** y selecciona el JSON descargado de Appwrite. La operación conserva los IDs y fechas originales, actualiza coincidencias y no duplica libros con el mismo ID de Google Books.
+
+## 6. Proteger el acceso
 
 La URL no listada no es autenticación. Si la biblioteca debe ser privada, activa **Deployment Protection** en Vercel. Las rutas API usan la API key en servidor, pero cualquier visitante que alcance la aplicación puede invocarlas porque el producto no tiene login.
 
-## 5. Verificar el despliegue
+## 7. Evitar que el proyecto gratuito se pause
 
-El archivo `vercel.json` programa una llamada diaria a `/api/health`. Esa ruta consulta un documento de Appwrite y evita que la base de datos quede inactiva. Los cron jobs se activan al desplegar la rama de producción en Vercel.
+El archivo `vercel.json` programa una llamada diaria a `/api/health`. Esa ruta hace una consulta mínima a Supabase para mantener actividad. Los cron jobs se activan al desplegar la rama de producción en Vercel; comprueba en el panel de Vercel que aparece el cron después del despliegue.
+
+## 8. Verificar el despliegue
 
 Ejecuta la comprobación sin dependencias adicionales:
 

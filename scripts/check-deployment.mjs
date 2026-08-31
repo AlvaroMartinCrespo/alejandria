@@ -24,7 +24,7 @@ try {
   const response = await fetch(`${target}/api/health`, { cache: "no-store" });
   const data = await response.json();
   const passed = response.ok && data.status === "ok";
-  console.log(`${passed ? "✓" : "✗"} /api/health (${data.appwrite || response.status})`);
+  console.log(`${passed ? "✓" : "✗"} /api/health (${data.supabase || response.status})`);
   if (!data.googleBooksKey) console.log("! GOOGLE_BOOKS_API_KEY no configurada; se usará la cuota pública.");
   failed ||= !passed;
 } catch (error) {

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BarChart3, BookCheck, House, Menu, Plus, Search, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useDeferredValue, useEffect, useState, type ReactNode } from "react";
 import { AddBookModal } from "@/components/add-book-modal";
@@ -32,9 +33,9 @@ function ShellContent({ children }: { children: ReactNode }) {
   }, [searchOpen]);
 
   const links = [
-    ["/", "⌂", "Inicio"],
-    ["/leidos", "✓", "Leídos"],
-    ["/estadisticas", "▥", "Estadísticas"],
+    { href: "/", icon: House, label: "Inicio" },
+    { href: "/leidos", icon: BookCheck, label: "Leídos" },
+    { href: "/estadisticas", icon: BarChart3, label: "Estadísticas" },
   ];
 
   return (
@@ -45,16 +46,16 @@ function ShellContent({ children }: { children: ReactNode }) {
           <span>Alejandría</span>
         </Link>
         <nav className={`main-nav${menuOpen ? " open" : ""}`} aria-label="Navegación principal">
-          {links.map(([href, icon, label]) => (
+          {links.map(({ href, icon: Icon, label }) => (
             <Link key={href} href={href} className={pathname === href ? "active" : ""} onClick={() => setMenuOpen(false)}>
-              <span aria-hidden="true">{icon}</span>{label}
+              <Icon size={15} aria-hidden="true" />{label}
             </Link>
           ))}
         </nav>
         <div className="header-actions">
-          <button className="icon-button" onClick={() => setSearchOpen(true)} aria-label="Buscar en mi biblioteca">⌕</button>
+          <button className="icon-button" onClick={() => setSearchOpen(true)} aria-label="Buscar en mi biblioteca"><Search size={18} /></button>
           <button className="button primary" onClick={() => setAddOpen(true)} aria-label="Añadir libro">
-            <span aria-hidden="true">＋</span><span className="desktop-label">Añadir libro</span>
+            <Plus size={18} aria-hidden="true" /><span className="desktop-label">Añadir libro</span>
           </button>
           <button
             className="icon-button menu-button"
@@ -62,13 +63,26 @@ function ShellContent({ children }: { children: ReactNode }) {
             aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={menuOpen}
           >
-            <span aria-hidden="true">{menuOpen ? "×" : "☰"}</span>
+            {menuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={19} aria-hidden="true" />}
           </button>
         </div>
       </header>
       <main className="page-shell">{children}</main>
+      <nav className="mobile-nav" aria-label="Navegación móvil">
+        {links.slice(0, 2).map(({ href, icon: Icon, label }) => (
+          <Link key={href} href={href} className={pathname === href ? "active" : ""}>
+            <Icon size={20} aria-hidden="true" /><small>{label}</small>
+          </Link>
+        ))}
+        <button onClick={() => setAddOpen(true)} aria-label="Añadir libro">
+          <Plus size={22} aria-hidden="true" /><small>Añadir</small>
+        </button>
+        <Link href="/estadisticas" className={pathname === "/estadisticas" ? "active" : ""}>
+          <BarChart3 size={20} aria-hidden="true" /><small>Estadísticas</small>
+        </Link>
+      </nav>
       <footer className="app-footer">
-        <span><i className={storageMode === "appwrite" ? "online" : ""} />{storageMode === "appwrite" ? "Sincronizado con Appwrite" : "Guardado en este dispositivo"}</span>
+        <span><i className={storageMode === "supabase" ? "online" : ""} />{storageMode === "supabase" ? "Sincronizado con Supabase" : "Guardado en este dispositivo"}</span>
         <span>{books.length} {books.length === 1 ? "libro" : "libros"}</span>
       </footer>
 
@@ -93,7 +107,7 @@ function ShellContent({ children }: { children: ReactNode }) {
                 <Link key={book.$id} href={`/libro/${book.$id}`} onClick={() => setSearchOpen(false)} className="global-result">
                   <BookCover title={book.title} url={book.coverUrl} />
                   <span><strong>{book.title}</strong><small>{book.authors.join(", ")}</small></span>
-                  <em>{STATUS_LABELS[book.status]}</em>
+                  <em className={`status-chip ${book.status}`}>{STATUS_LABELS[book.status]}</em>
                 </Link>
               ))}
             </div>
