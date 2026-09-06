@@ -88,11 +88,11 @@ summary:focus-visible {
   position: sticky;
   top: 0;
   z-index: 30;
-  height: 72px;
+  min-height: 72px;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: 0 max(24px, calc((100vw - var(--page-width)) / 2));
+  padding: env(safe-area-inset-top) max(24px, calc((100vw - var(--page-width)) / 2)) 0;
   border-bottom: 1px solid rgba(255,255,255,.08);
   background: rgba(11, 12, 12, .9);
   backdrop-filter: blur(18px);
@@ -2137,7 +2137,8 @@ textarea::placeholder {
 
 @media (max-width: 680px) {
   .topbar {
-    height: 64px;
+    min-height: 64px;
+    padding-top: env(safe-area-inset-top);
     padding-right: max(16px, env(safe-area-inset-right));
     padding-left: max(16px, env(safe-area-inset-left));
   }
