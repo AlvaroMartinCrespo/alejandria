@@ -48,8 +48,28 @@ export default function BookDetailPage() {
       </section>
 
       <section className="detail-facts">
-        <div><span>Publicado</span><strong>{book.publishedYear ?? "—"}</strong></div>
-        <div><span>Extensión</span><strong>{book.pageCount ? `${book.pageCount} páginas` : "—"}</strong></div>
+        <label>
+          <span>Publicado</span>
+          <input
+            type="number"
+            min="0"
+            max="3000"
+            placeholder="Año"
+            value={book.publishedYear ?? ""}
+            onChange={(event) => void save({ publishedYear: event.target.value ? Number(event.target.value) : null })}
+          />
+        </label>
+        <label>
+          <span>Extensión</span>
+          <input
+            type="number"
+            min="0"
+            max="100000"
+            placeholder="Páginas"
+            value={book.pageCount ?? ""}
+            onChange={(event) => void save({ pageCount: event.target.value ? Number(event.target.value) : null })}
+          />
+        </label>
         <div className="rating-fact"><span>Tu puntuación</span><div>{[1, 2, 3, 4, 5].map((rating) => <button key={rating} className={(book.rating ?? 0) >= rating ? "selected" : ""} onClick={() => void save({ rating })} aria-label={`${rating} estrellas`}>★</button>)}</div></div>
         {book.status === "read" && <label><span>Terminado en</span><input type="number" min="1900" max="2100" value={book.finishedYear ?? new Date().getFullYear()} onChange={(event) => void save({ finishedYear: Number(event.target.value) })} /></label>}
       </section>
