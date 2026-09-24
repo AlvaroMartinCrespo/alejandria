@@ -1,4 +1,4 @@
-import type { Book, BookStatus, GoogleBookResult } from "@/types/book";
+import type { Book, BookStatus, Collection, GoogleBookResult } from "@/types/book";
 
 const STATUSES = new Set<BookStatus>(["to_read", "reading", "read"]);
 
@@ -28,6 +28,21 @@ function authors(value: unknown) {
     .map((author) => author.trim().slice(0, 200))
     .filter(Boolean)
     .slice(0, 20);
+}
+
+export function parseCollectionName(value: unknown) {
+  if (typeof value !== "string") throw new Error("Nombre de carpeta no válido");
+  const name = value.trim();
+  if (!name || name.length > 60) throw new Error("El nombre de la carpeta debe tener entre 1 y 60 caracteres");
+  return name;
+}
+
+function optionalCollectionId(value: unknown) {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value !== "string" || !value.trim() || value.length > 255) {
+    throw new Error("Carpeta no válida");
+  }
+  return value;
 }
 
 export function parseGoogleBook(value: unknown): GoogleBookResult {
@@ -77,6 +92,7 @@ export function parseBookChanges(value: unknown): Partial<Omit<Book, "$id" | "go
   }
   if ("favorite" in input) changes.favorite = boolean(input.favorite);
   if ("order" in input) changes.order = optionalInteger(input.order);
+  if ("collectionId" in input) changes.collectionId = optionalCollectionId(input.collectionId);
   if ("rating" in input) changes.rating = optionalInteger(input.rating, 0, 5);
   if ("finishedYear" in input) changes.finishedYear = optionalInteger(input.finishedYear, 1900, 2100);
   if ("progress" in input) changes.progress = optionalInteger(input.progress, 0, 100) ?? 0;
@@ -123,6 +139,7 @@ function backupBook(value: unknown): Book {
     status: rawStatus as BookStatus,
     favorite: input.status === "favorite" || input.favorite === true,
     order: optionalInteger(input.order ?? input.sort_order),
+    collectionId: optionalCollectionId(input.collectionId ?? input.collection_id),
     rating: optionalInteger(input.rating, 0, 5),
     finishedYear: optionalInteger(input.finishedYear ?? input.finished_year, 1900, 2100),
     addedAt,
@@ -131,7 +148,7 @@ function backupBook(value: unknown): Book {
   };
 }
 
-export function parseBookBackup(value: unknown): Book[] {
+export function parseBookBackup(value: unknown): { books: Book[]; collections: Collection[] } {
   const candidate = Array.isArray(value)
     ? value
     : typeof value === "object" && value !== null
@@ -147,5 +164,32 @@ export function parseBookBackup(value: unknown): Book[] {
     unique.set(book.googleBooksId || book.$id, book);
   }
   if (!unique.size) throw new Error("No se encontraron libros en el archivo.");
-  return Array.from(unique.values());
+
+  const sourceCollections = !Array.isArray(value) && typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>).collections
+    : [];
+  if (sourceCollections !== undefined && !Array.isArray(sourceCollections)) {
+    throw new Error("Las carpetas de la copia no son válidas.");
+  }
+  const collectionIds = new Set<string>();
+  const collections = (sourceCollections ?? []).map((item, index) => {
+    if (typeof item !== "object" || item === null) throw new Error("Carpeta no válida en la copia");
+    const input = item as Record<string, unknown>;
+    const $id = optionalCollectionId(input.$id ?? input.id);
+    if (!$id || collectionIds.has($id)) throw new Error("Carpeta duplicada o no válida en la copia");
+    collectionIds.add($id);
+    return {
+      $id,
+      name: parseCollectionName(input.name),
+      order: optionalInteger(input.order ?? input.sort_order) ?? index,
+    };
+  });
+
+  return {
+    books: Array.from(unique.values()).map((book) => ({
+      ...book,
+      collectionId: book.collectionId && collectionIds.has(book.collectionId) ? book.collectionId : null,
+    })),
+    collections,
+  };
 }

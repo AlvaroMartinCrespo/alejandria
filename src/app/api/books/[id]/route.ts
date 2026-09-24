@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { parseBookChanges } from "@/lib/book-validation";
+import { hasEditorSession } from "@/lib/editor-auth";
 import { deleteBook, updateBook } from "@/lib/supabase";
 
 type Context = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, { params }: Context) {
+  if (!(await hasEditorSession())) return NextResponse.json({ error: "Edición bloqueada." }, { status: 401 });
   try {
     const { id } = await params;
     const changes = parseBookChanges(await request.json());
@@ -19,6 +21,7 @@ export async function PATCH(request: Request, { params }: Context) {
 }
 
 export async function DELETE(_request: Request, { params }: Context) {
+  if (!(await hasEditorSession())) return NextResponse.json({ error: "Edición bloqueada." }, { status: 401 });
   try {
     const { id } = await params;
     await deleteBook(id);

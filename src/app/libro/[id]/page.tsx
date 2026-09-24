@@ -11,7 +11,7 @@ import type { BookStatus } from "@/types/book";
 export default function BookDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { books, loading, updateBook, setStatus, toggleFavorite, removeBook } = useLibrary();
+  const { books, editing, loading, updateBook, setStatus, toggleFavorite, removeBook } = useLibrary();
   const [saved, setSaved] = useState(false);
   const book = books.find((item) => item.$id === id);
 
@@ -35,12 +35,24 @@ export default function BookDetailPage() {
             {book.favorite && <span className="status-chip favorite">Favorito</span>}
           </div>
           <h1>{book.title}</h1>
-          <p>{book.authors.join(", ")}</p>
+          <label className="author-editor">
+            <span>Autor</span>
+            <input
+              key={book.authors.join(",")}
+              defaultValue={book.authors.join(", ")}
+              disabled={!editing}
+              placeholder="Nombre del autor"
+              onBlur={(event) => {
+                const authors = event.target.value.split(",").map((author) => author.trim()).filter(Boolean);
+                if (authors.join(", ") !== book.authors.join(", ")) void save({ authors });
+              }}
+            />
+          </label>
           <div className="status-actions">
             {(Object.entries(STATUS_LABELS) as [BookStatus, string][]).filter(([status]) => status !== book.status).map(([status, label]) => (
-              <button key={status} className="button secondary compact" onClick={() => void setStatus(book.$id, status)}>{label}</button>
+              <button key={status} className="button secondary compact" disabled={!editing} onClick={() => void setStatus(book.$id, status)}>{label}</button>
             ))}
-            <button className={`button secondary compact favorite-toggle${book.favorite ? " active" : ""}`} onClick={() => void toggleFavorite(book.$id)}>
+            <button className={`button secondary compact favorite-toggle${book.favorite ? " active" : ""}`} disabled={!editing} onClick={() => void toggleFavorite(book.$id)}>
               <span aria-hidden="true">{book.favorite ? "★" : "☆"}</span>{book.favorite ? "Quitar favorito" : "Favorito"}
             </button>
           </div>
@@ -56,6 +68,7 @@ export default function BookDetailPage() {
             max="3000"
             placeholder="Año"
             value={book.publishedYear ?? ""}
+            disabled={!editing}
             onChange={(event) => void save({ publishedYear: event.target.value ? Number(event.target.value) : null })}
           />
         </label>
@@ -67,19 +80,20 @@ export default function BookDetailPage() {
             max="100000"
             placeholder="Páginas"
             value={book.pageCount ?? ""}
+            disabled={!editing}
             onChange={(event) => void save({ pageCount: event.target.value ? Number(event.target.value) : null })}
           />
         </label>
-        <div className="rating-fact"><span>Tu puntuación</span><div>{[1, 2, 3, 4, 5].map((rating) => <button key={rating} className={(book.rating ?? 0) >= rating ? "selected" : ""} onClick={() => void save({ rating })} aria-label={`${rating} estrellas`}>★</button>)}</div></div>
-        {book.status === "read" && <label><span>Terminado en</span><input type="number" min="1900" max="2100" value={book.finishedYear ?? new Date().getFullYear()} onChange={(event) => void save({ finishedYear: Number(event.target.value) })} /></label>}
+        <div className="rating-fact"><span>Tu puntuación</span><div>{[1, 2, 3, 4, 5].map((rating) => <button key={rating} disabled={!editing} className={(book.rating ?? 0) >= rating ? "selected" : ""} onClick={() => void save({ rating })} aria-label={`${rating} estrellas`}>★</button>)}</div></div>
+        {book.status === "read" && <label><span>Terminado en</span><input disabled={!editing} type="number" min="1900" max="2100" value={book.finishedYear ?? new Date().getFullYear()} onChange={(event) => void save({ finishedYear: Number(event.target.value) })} /></label>}
       </section>
 
       <div className="detail-columns">
         <details className="synopsis" open><summary><h2>Sinopsis</h2><span>⌄</span></summary><p>{book.synopsis || "Este libro no tiene una sinopsis disponible."}</p></details>
-        <section className="notes-section"><div><h2>Notas personales</h2>{saved && <span>Guardado</span>}</div><textarea value={book.notes ?? ""} onChange={(event) => void updateBook(book.$id, { notes: event.target.value })} placeholder="Ideas, citas o impresiones de esta lectura..." /></section>
+        <section className="notes-section"><div><h2>Notas personales</h2>{saved && <span>Guardado</span>}</div><textarea disabled={!editing} value={book.notes ?? ""} onChange={(event) => void updateBook(book.$id, { notes: event.target.value })} placeholder="Ideas, citas o impresiones de esta lectura..." /></section>
       </div>
 
-      <section className="danger-zone"><div><strong>Eliminar de la biblioteca</strong><p>Esta acción no se puede deshacer.</p></div><button className="danger-button" onClick={async () => { if (window.confirm(`¿Eliminar “${book.title}”?`)) { await removeBook(book.$id); router.push("/"); } }}>Eliminar libro</button></section>
+      <section className="danger-zone"><div><strong>Eliminar de la biblioteca</strong><p>Esta acción no se puede deshacer.</p></div><button disabled={!editing} className="danger-button" onClick={async () => { if (window.confirm(`¿Eliminar “${book.title}”?`)) { await removeBook(book.$id); router.push("/"); } }}>Eliminar libro</button></section>
     </>
   );
 }

@@ -9,9 +9,9 @@ import type { BookStatus } from "@/types/book";
 const GROUPS: BookStatus[] = ["reading", "to_read", "read"];
 
 export default function PrintableLibraryPage() {
-  const { books, loading } = useLibrary();
+  const { books, collections, loading } = useLibrary();
   const groups = [
-    ...GROUPS.map((status) => ({
+    ...GROUPS.filter((status) => status !== "to_read").map((status) => ({
       key: status,
       label: STATUS_LABELS[status],
       books: books
@@ -19,6 +19,19 @@ export default function PrintableLibraryPage() {
         .sort((a, b) => status === "read"
           ? (b.finishedYear ?? 0) - (a.finishedYear ?? 0)
           : a.title.localeCompare(b.title, "es")),
+    })),
+    ...[
+      { key: "unclassified", label: "Quiero leer · Sin clasificar", collectionId: null },
+      ...collections.sort((left, right) => left.order - right.order).map((collection) => ({
+        key: collection.$id,
+        label: `Quiero leer · ${collection.name}`,
+        collectionId: collection.$id,
+      })),
+    ].map((group) => ({
+      ...group,
+      books: books
+        .filter((book) => book.status === "to_read" && book.collectionId === group.collectionId)
+        .sort((left, right) => (left.order ?? 0) - (right.order ?? 0)),
     })),
     {
       key: "favorite",

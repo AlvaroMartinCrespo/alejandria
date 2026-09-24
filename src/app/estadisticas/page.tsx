@@ -22,7 +22,7 @@ function sortByFinishedDesc(a: Book, b: Book) {
 }
 
 export default function StatisticsPage() {
-  const { books, restoreBackup } = useLibrary();
+  const { books, collections, editing, restoreBackup } = useLibrary();
   const [tab, setTab] = useState<Tab>("resumen");
 
   const completed = books.filter((book) => book.status === "read");
@@ -70,10 +70,11 @@ export default function StatisticsPage() {
   function exportJson() {
     const backup: LibraryBackup = {
       format: "alejandria-library-backup",
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       bookCount: books.length,
       books,
+      collections,
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
     const link = document.createElement("a");
@@ -103,7 +104,7 @@ export default function StatisticsPage() {
         <div><p className="eyebrow">La biblioteca en números</p><h1>Estadísticas</h1></div>
         <div className="export-actions">
           <button className="button secondary" onClick={exportJson}><Download size={15} />JSON</button>
-          <label className="button secondary file-button"><Upload size={15} />Restaurar<input type="file" accept="application/json,.json" onChange={(event) => void importJson(event.target.files?.[0])} /></label>
+          <label className="button secondary file-button" aria-disabled={!editing}><Upload size={15} />Restaurar<input disabled={!editing} type="file" accept="application/json,.json" onChange={(event) => void importJson(event.target.files?.[0])} /></label>
           <Link className="button secondary" href="/exportar"><FileText size={15} />PDF</Link>
         </div>
       </section>

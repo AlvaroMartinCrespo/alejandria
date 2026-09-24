@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Book, GoogleBookResult } from "@/types/book";
+import type { Book, Collection, GoogleBookResult } from "@/types/book";
 
 const BOOK_COLUMNS = [
   "id",
@@ -14,6 +14,7 @@ const BOOK_COLUMNS = [
   "status",
   "favorite",
   "sort_order",
+  "collection_id",
   "rating",
   "finished_year",
   "added_at",
@@ -33,11 +34,18 @@ type BookRow = {
   status: Book["status"];
   favorite: boolean;
   sort_order: number | null;
+  collection_id: string | null;
   rating: number | null;
   finished_year: number | null;
   added_at: string;
   progress: number;
   notes: string;
+};
+
+type CollectionRow = {
+  id: string;
+  name: string;
+  sort_order: number;
 };
 
 function getConfig() {
@@ -88,6 +96,7 @@ function fromRow(row: BookRow): Book {
     status: row.status,
     favorite: row.favorite,
     order: row.sort_order,
+    collectionId: row.collection_id,
     rating: row.rating,
     finishedYear: row.finished_year,
     addedAt: row.added_at,
@@ -109,6 +118,7 @@ export function toRow(book: Book): BookRow {
     status: book.status,
     favorite: book.favorite,
     sort_order: book.order,
+    collection_id: book.collectionId,
     rating: book.rating,
     finished_year: book.finishedYear,
     added_at: book.addedAt,
@@ -137,6 +147,7 @@ export async function createBook(result: GoogleBookResult) {
     status: "to_read",
     favorite: false,
     order: Date.now(),
+    collectionId: null,
     rating: null,
     finishedYear: null,
     addedAt: new Date().toISOString(),
@@ -165,6 +176,7 @@ export async function updateBook(
     status: "status",
     favorite: "favorite",
     order: "sort_order",
+    collectionId: "collection_id",
     rating: "rating",
     finishedYear: "finished_year",
     progress: "progress",
@@ -185,6 +197,57 @@ export async function updateBook(
   return fromRow(rows[0]);
 }
 
+function fromCollectionRow(row: CollectionRow): Collection {
+  return { $id: row.id, name: row.name, order: row.sort_order };
+}
+
+export async function listCollections() {
+  const rows = await request<CollectionRow[]>("collections?select=id,name,sort_order&order=sort_order.asc");
+  return rows.map(fromCollectionRow);
+}
+
+export async function createCollection(name: string) {
+  const collections = await listCollections();
+  const rows = await request<CollectionRow[]>("collections?select=id,name,sort_order", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({ id: crypto.randomUUID(), name, sort_order: collections.length }),
+  });
+  return fromCollectionRow(rows[0]);
+}
+
+export async function updateCollection(id: string, changes: Pick<Partial<Collection>, "name" | "order">) {
+  const row: Record<string, string | number> = {};
+  if (changes.name !== undefined) row.name = changes.name;
+  if (changes.order !== undefined) row.sort_order = changes.order;
+  const rows = await request<CollectionRow[]>(
+    `collections?id=eq.${encodeURIComponent(id)}&select=id,name,sort_order`,
+    { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify(row) },
+  );
+  if (!rows[0]) throw new Error("La carpeta no existe");
+  return fromCollectionRow(rows[0]);
+}
+
+export async function deleteCollection(id: string) {
+  await request<void>(`collections?id=eq.${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: { Prefer: "return=minimal" },
+  });
+}
+
+export async function reorderBooks(moves: Array<{ id: string; collectionId: string | null; order: number }>) {
+  await request<void>("rpc/reorder_books", {
+    method: "POST",
+    body: JSON.stringify({
+      moves: moves.map((move) => ({
+        id: move.id,
+        collection_id: move.collectionId ?? "",
+        sort_order: move.order,
+      })),
+    }),
+  });
+}
+
 export async function deleteBook(id: string) {
   await request<void>(`books?id=eq.${encodeURIComponent(id)}`, {
     method: "DELETE",
@@ -192,7 +255,21 @@ export async function deleteBook(id: string) {
   });
 }
 
-export async function importBooks(incoming: Book[]) {
+export async function importBooks(incoming: Book[], incomingCollections: Collection[]) {
+  const existingCollections = await listCollections();
+  const existingCollectionIds = new Set(existingCollections.map((collection) => collection.$id));
+  const collectionsToCreate = incomingCollections.filter((collection) => !existingCollectionIds.has(collection.$id));
+  for (let offset = 0; offset < collectionsToCreate.length; offset += 500) {
+    await request<CollectionRow[]>("collections?on_conflict=id", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify(collectionsToCreate.slice(offset, offset + 500).map((collection) => ({
+        id: collection.$id,
+        name: collection.name,
+        sort_order: collection.order,
+      }))),
+    });
+  }
   const existing = await listBooks();
   const byId = new Map(existing.map((book) => [book.$id, book]));
   const byGoogleId = new Map(

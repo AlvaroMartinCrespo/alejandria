@@ -17,6 +17,7 @@ export interface Book {
   status: BookStatus;
   favorite: boolean;
   order: number | null; // posición manual, solo relevante en status "to_read"
+  collectionId: string | null;
   rating: number | null; // 0-5
   finishedYear: number | null; // año en que se terminó de leer
   addedAt: string; // ISO date
@@ -24,12 +25,19 @@ export interface Book {
   notes?: string; // notas personales opcionales
 }
 
+export interface Collection {
+  $id: string;
+  name: string;
+  order: number;
+}
+
 export interface LibraryBackup {
   format: "alejandria-library-backup";
-  version: 1;
+  version: 1 | 2;
   exportedAt: string;
   bookCount: number;
   books: Book[];
+  collections?: Collection[];
 }
 
 /**

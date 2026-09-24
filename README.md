@@ -23,7 +23,7 @@ Ideal para quien busca una alternativa **self-hosted** y minimalista a apps como
 - 💾 **Exportación e importación**: backup completo en JSON y vista imprimible en PDF.
 - 🎲 **Modo "Sorpréndeme"** para elegir tu próxima lectura al azar.
 - 📱 **PWA instalable**, con funcionamiento offline gracias a un modo local automático cuando Supabase no está configurado.
-- 🔒 **Sin login**: pensada para uso personal, con la clave privada de Supabase protegida siempre en el servidor.
+- 🔒 **Edición protegida opcionalmente**: candado con contraseña compartida y sesión persistente en cookie `HttpOnly`.
 
 ---
 
@@ -68,6 +68,18 @@ Abre [http://localhost:3000](http://localhost:3000).
 2. Genera una API key y añádela a `GOOGLE_BOOKS_API_KEY`.
 
 Consulta la guía completa paso a paso, incluido el modelo de datos y el despliegue en Vercel, en el propio repositorio.
+
+### Proteger la edición con contraseña
+
+La lectura permanece disponible, pero cualquier cambio queda bloqueado hasta abrir el candado de la navegación. Genera el hash y el secreto de sesión sin guardar la contraseña en ningún archivo:
+
+```bash
+read -s password
+ALEJANDRIA_PASSWORD="$password" node scripts/generate-password-hash.mjs
+unset password
+```
+
+Copia las dos líneas generadas en `.env.local` o, en producción, en las variables de entorno del despliegue. La sesión dura 30 días y se guarda en una cookie firmada `HttpOnly`; no se almacena ni la contraseña ni la sesión en `localStorage`.
 
 ---
 

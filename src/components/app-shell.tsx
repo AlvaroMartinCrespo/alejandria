@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, BookCheck, House, Menu, Plus, Search, X } from "lucide-react";
+import { BarChart3, BookCheck, House, Lock, Menu, Plus, Search, Unlock, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useDeferredValue, useEffect, useState, type ReactNode } from "react";
 import { AddBookModal } from "@/components/add-book-modal";
@@ -11,10 +11,14 @@ import { STATUS_LABELS } from "@/lib/book-utils";
 
 function ShellContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { books, storageMode, notice, clearNotice } = useLibrary();
+  const { books, editing, editorConfigured, storageMode, notice, clearNotice, lock, unlock } = useLibrary();
   const [addOpen, setAddOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [lockOpen, setLockOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [lockError, setLockError] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase("es"));
   const results = deferredQuery
@@ -54,7 +58,10 @@ function ShellContent({ children }: { children: ReactNode }) {
         </nav>
         <div className="header-actions">
           <button className="icon-button" onClick={() => setSearchOpen(true)} aria-label="Buscar en mi biblioteca"><Search size={18} /></button>
-          <button className="button primary" onClick={() => setAddOpen(true)} aria-label="Añadir libro">
+          <button className="icon-button" onClick={() => editing ? void lock() : setLockOpen(true)} aria-label={editing ? "Bloquear edición" : "Desbloquear edición"} title={editing ? "Bloquear edición" : "Desbloquear edición"}>
+            {editing ? <Unlock size={18} /> : <Lock size={18} />}
+          </button>
+          <button className="button primary" disabled={!editing} onClick={() => setAddOpen(true)} aria-label="Añadir libro">
             <Plus size={18} aria-hidden="true" /><span className="desktop-label">Añadir libro</span>
           </button>
           <button
@@ -74,7 +81,7 @@ function ShellContent({ children }: { children: ReactNode }) {
             <Icon size={20} aria-hidden="true" /><small>{label}</small>
           </Link>
         ))}
-        <button onClick={() => setAddOpen(true)} aria-label="Añadir libro">
+        <button disabled={!editing} onClick={() => setAddOpen(true)} aria-label="Añadir libro">
           <Plus size={22} aria-hidden="true" /><small>Añadir</small>
         </button>
         <Link href="/estadisticas" className={pathname === "/estadisticas" ? "active" : ""}>
@@ -87,6 +94,32 @@ function ShellContent({ children }: { children: ReactNode }) {
       </footer>
 
       <AddBookModal open={addOpen} onClose={() => setAddOpen(false)} />
+      {lockOpen && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setLockOpen(false)}>
+          <form className="lock-panel" onMouseDown={(event) => event.stopPropagation()} onSubmit={async (event) => {
+            event.preventDefault();
+            setUnlocking(true);
+            setLockError("");
+            try {
+              await unlock(password);
+              setPassword("");
+              setLockOpen(false);
+            } catch (error) {
+              setLockError(error instanceof Error ? error.message : "No se pudo desbloquear la edición.");
+            } finally {
+              setUnlocking(false);
+            }
+          }}>
+            <Lock size={24} aria-hidden="true" />
+            <h2>Edición bloqueada</h2>
+            <p>Introduce la contraseña para modificar tu biblioteca.</p>
+            <input autoFocus type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Contraseña" />
+            {lockError && <p className="lock-error" role="alert">{lockError}</p>}
+            {!editorConfigured && <p className="lock-error">Falta configurar la contraseña en el servidor.</p>}
+            <button className="button primary" disabled={unlocking}>{unlocking ? "Desbloqueando..." : "Desbloquear"}</button>
+          </form>
+        </div>
+      )}
       {notice && (
         <button className={`toast ${notice.type}`} onClick={clearNotice} role="status">
           <span>{notice.type === "success" ? "✓" : "!"}</span>{notice.message}
