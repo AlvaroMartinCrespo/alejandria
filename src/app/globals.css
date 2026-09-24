@@ -645,7 +645,7 @@ summary:focus-visible {
   animation: reveal .5s .16s ease-out both;
 }
 
-.library-section:has(.status-control[open]) {
+.library-section:has(.status-control[open], .move-control[open]) {
   position: relative;
   z-index: 20;
 }
@@ -889,7 +889,7 @@ summary:focus-visible {
   opacity: .25;
 }
 
-.book-row:has(.status-control[open]) {
+.book-row:has(.status-control[open], .move-control[open]) {
   z-index: 1;
 }
 
@@ -2615,8 +2615,8 @@ textarea::placeholder {
     font-size: 10px;
   }
 
-  .library-section:has(.status-control[open]),
-  .year-group:has(.status-control[open]) {
+  .library-section:has(.status-control[open], .move-control[open]),
+  .year-group:has(.status-control[open], .move-control[open]) {
     position: relative;
     z-index: 40;
   }
