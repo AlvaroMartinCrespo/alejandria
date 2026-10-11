@@ -108,7 +108,6 @@ export default function AnimeDetailPage() {
     anime: list,
     animeError,
     animeLoading,
-    bumpEpisode,
     removeAnime,
     setAnimeStatus,
     setProgress,
@@ -205,10 +204,6 @@ export default function AnimeDetailPage() {
             maximum={100000}
             onCommit={(episode) => { if (episode !== null) setProgress(current.$id, { episode }); }}
           />
-          <div className="anime-step-buttons">
-            <button type="button" disabled={!editing || current.currentEpisode <= 0} onClick={() => bumpEpisode(current.$id, -1)} aria-label="Restar un capítulo">−1</button>
-            <button type="button" disabled={!editing} onClick={() => bumpEpisode(current.$id, 1)} aria-label="Sumar un capítulo">+1</button>
-          </div>
         </div>
       </section>
 

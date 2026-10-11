@@ -35,8 +35,6 @@ interface AnimeContextValue {
   moveAnime: (id: string, index: number) => Promise<void>;
   /** Valor exacto escrito por el usuario (función principal). */
   setProgress: (id: string, progress: { season?: number; episode?: number }) => void;
-  bumpEpisode: (id: string, delta: 1 | -1) => void;
-  bumpSeason: (id: string) => void;
   restoreAnime: (value: Anime[]) => Promise<number>;
 }
 
@@ -364,18 +362,6 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
     });
   }
 
-  function bumpEpisode(id: string, delta: 1 | -1) {
-    const current = animeRef.current.find((item) => item.$id === id);
-    if (!current) return;
-    setProgress(id, { episode: Math.max(0, current.currentEpisode + delta) });
-  }
-
-  function bumpSeason(id: string) {
-    const current = animeRef.current.find((item) => item.$id === id);
-    if (!current) return;
-    setProgress(id, { season: current.currentSeason + 1, episode: 0 });
-  }
-
   async function restoreAnime(value: Anime[]) {
     requireEditing();
     if (!value.length) return 0;
@@ -420,8 +406,6 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
         removeAnime,
         moveAnime,
         setProgress,
-        bumpEpisode,
-        bumpSeason,
         restoreAnime,
       }}
     >

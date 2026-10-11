@@ -25,7 +25,7 @@ export function AnimeRow({
   onMoveDown?: () => void;
 }) {
   const { editing } = useLibrary();
-  const { bumpEpisode, bumpSeason, setAnimeStatus, setProgress, toggleAnimeFavorite } = useAnime();
+  const { setAnimeStatus, setProgress, toggleAnimeFavorite } = useAnime();
   const [draft, setDraft] = useState<string | null>(null);
   const { attributes, isDragging, listeners, setNodeRef, transform, transition } = useSortable({
     id: anime.$id,
@@ -118,11 +118,6 @@ export function AnimeRow({
                 aria-label={`Capítulo actual de ${anime.title}`}
               />
             </label>
-            <div className="anime-step-buttons">
-              <button type="button" onClick={() => bumpEpisode(anime.$id, -1)} disabled={anime.currentEpisode <= 0} aria-label="Restar un capítulo">−1</button>
-              <button type="button" onClick={() => bumpEpisode(anime.$id, 1)} aria-label="Sumar un capítulo">+1</button>
-              <button type="button" className="anime-new-season" onClick={() => bumpSeason(anime.$id)}>Nueva temporada</button>
-            </div>
           </div>
         )}
         {canSuggestWatched && (

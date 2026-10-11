@@ -256,6 +256,7 @@ export function AddAnimeModal({ open, onClose }: { open: boolean; onClose: () =>
                       <div className="anime-result-actions">
                         <button className="button secondary compact" onClick={() => void addFromResult(result, "to_watch", 1, 0)}>Pendiente</button>
                         <button className="button secondary compact" onClick={() => startWatching(result)} aria-expanded={confirming}>Viendo</button>
+                        <button className="button secondary compact" onClick={() => void addFromResult(result, "watched", 1, 0)}>Visto</button>
                       </div>
                     )}
                     {!added && confirming && (

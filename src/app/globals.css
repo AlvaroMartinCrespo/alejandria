@@ -21,6 +21,7 @@
 }
 
 html {
+  -webkit-tap-highlight-color: transparent;
   background: var(--canvas);
   color-scheme: dark;
   scroll-behavior: smooth;
@@ -873,7 +874,7 @@ summary:focus-visible {
   border-bottom: 0;
 }
 
-.book-row:hover {
+.book-row:not(.anime-row):hover {
   background: #171a18;
 }
 
@@ -1426,7 +1427,7 @@ textarea::placeholder {
   border-bottom: 1px solid var(--line-soft);
 }
 
-.result-row:hover {
+.result-row:not(.anime-result):hover {
   background: var(--panel);
 }
 
@@ -3395,6 +3396,11 @@ textarea::placeholder {
   align-self: start;
 }
 
+.anime-row .book-meta-inline {
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
 .anime-row-copy {
   display: grid;
   gap: 6px;
@@ -3461,40 +3467,6 @@ textarea::placeholder {
   outline: none;
 }
 
-.anime-step-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.anime-step-buttons button {
-  min-width: 40px;
-  min-height: 36px;
-  padding: 0 12px;
-  color: var(--muted);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: #111312;
-  font-size: 12px;
-  font-weight: 700;
-  transition: color .2s, border-color .2s;
-}
-
-.anime-step-buttons button:hover:not(:disabled) {
-  color: var(--ink);
-  border-color: #50584f;
-}
-
-.anime-step-buttons button:disabled {
-  cursor: default;
-  opacity: .35;
-}
-
-.anime-step-buttons .anime-new-season {
-  color: var(--acid);
-  border-color: #455338;
-}
-
 .anime-mark-watched {
   justify-self: start;
   margin-top: 4px;
@@ -3528,6 +3500,10 @@ textarea::placeholder {
 .anime-modal-tabs button.active {
   color: var(--acid);
   border-bottom-color: var(--acid);
+}
+
+.anime-modal-tabs + .search-field.large {
+  margin-top: 18px;
 }
 
 .anime-search-hint {
@@ -3649,13 +3625,8 @@ textarea::placeholder {
 }
 
 .anime-progress-panel .detail-facts {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: stretch;
-}
-
-.anime-progress-panel .anime-step-buttons {
-  align-content: center;
-  padding: 20px 25px;
 }
 
 .anime-progress-panel .detail-facts select,
@@ -3835,22 +3806,13 @@ textarea::placeholder {
     min-height: 44px;
   }
 
-  .anime-step-buttons {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: 1fr 1fr 2fr;
-    gap: 8px;
-  }
-
-  .anime-step-buttons button {
-    min-height: 44px;
-    min-width: 44px;
-    padding: 0 8px;
-  }
-
   .anime-mark-watched {
     width: 100%;
     min-height: 44px;
+  }
+
+  .anime-modal-tabs + .search-field.large {
+    margin-top: 14px;
   }
 
   .anime-modal-tabs {
@@ -3878,7 +3840,7 @@ textarea::placeholder {
 
   .anime-result-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .anime-result .button.compact,
@@ -3922,14 +3884,6 @@ textarea::placeholder {
 
   .anime-progress-panel .detail-facts {
     grid-template-columns: 1fr 1fr;
-  }
-
-  .anime-progress-panel .anime-step-buttons {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 15px;
-    border-top: 1px solid var(--line);
   }
 
   .anime-facts {
@@ -3978,14 +3932,6 @@ textarea::placeholder {
     grid-template-columns: 1fr;
   }
 
-  .anime-step-buttons {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .anime-step-buttons .anime-new-season {
-    grid-column: 1 / -1;
-  }
-
   .anime-title-ja {
     font-size: 11px;
   }
@@ -3997,7 +3943,6 @@ textarea::placeholder {
 
 /* ---- Movimiento reducido ---- */
 @media (prefers-reduced-motion: reduce) {
-  .anime-step-buttons button,
   .anime-row,
   .anime-now {
     animation: none !important;

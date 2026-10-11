@@ -54,12 +54,86 @@ export const JAPANESE_PHRASES = [
   { japanese: "初心忘るべからず", romaji: "Shoshin wasuru bekarazu", translation: "No olvides tu espíritu de principiante." },
   { japanese: "花鳥風月", romaji: "Kachō fūgetsu", translation: "Flores, aves, viento y luna: la belleza de la naturaleza." },
   { japanese: "光陰矢の如し", romaji: "Kōin ya no gotoshi", translation: "El tiempo vuela como una flecha." },
+  { japanese: "以心伝心", romaji: "Ishin denshin", translation: "De corazón a corazón: entenderse sin palabras." },
+  { japanese: "温故知新", romaji: "Onko chishin", translation: "Estudiar el pasado para comprender lo nuevo." },
+  { japanese: "日進月歩", romaji: "Nisshin geppo", translation: "Avanzar un poco cada día." },
+  { japanese: "諸行無常", romaji: "Shogyō mujō", translation: "Todo es impermanente." },
+  { japanese: "自業自得", romaji: "Jigō jitoku", translation: "Cosechas lo que siembras." },
+  { japanese: "一日一善", romaji: "Ichinichi ichizen", translation: "Una buena acción al día." },
+  { japanese: "初志貫徹", romaji: "Shoshi kantetsu", translation: "Mantén tu propósito inicial hasta el final." },
+  { japanese: "急がば回れ", romaji: "Isogaba maware", translation: "Si tienes prisa, da un rodeo." },
+  { japanese: "失敗は成功のもと", romaji: "Shippai wa seikō no moto", translation: "El fracaso es la base del éxito." },
+  { japanese: "塵も積もれば山となる", romaji: "Chiri mo tsumoreba yama to naru", translation: "Hasta el polvo, acumulado, se vuelve montaña." },
+  { japanese: "備えあれば憂いなし", romaji: "Sonae areba urei nashi", translation: "Quien se prepara no tiene de qué preocuparse." },
+  { japanese: "井の中の蛙大海を知らず", romaji: "I no naka no kawazu taikai o shirazu", translation: "La rana del pozo no conoce el océano." },
+  { japanese: "明日は明日の風が吹く", romaji: "Ashita wa ashita no kaze ga fuku", translation: "Mañana soplará el viento de mañana." },
+  { japanese: "縁の下の力持ち", romaji: "En no shita no chikaramochi", translation: "Quien sostiene sin ser visto." },
+  { japanese: "二兎を追う者は一兎をも得ず", romaji: "Nito o ou mono wa itto o mo ezu", translation: "Quien persigue dos liebres no atrapa ninguna." },
+  { japanese: "能ある鷹は爪を隠す", romaji: "Nō aru taka wa tsume o kakusu", translation: "El halcón hábil esconde las garras." },
+  { japanese: "勝って兜の緒を締めよ", romaji: "Katte kabuto no o o shimeyo", translation: "Tras la victoria, ajústate el casco." },
+  { japanese: "物の哀れ", romaji: "Mono no aware", translation: "La belleza melancólica de lo pasajero." },
+  { japanese: "侘び寂び", romaji: "Wabi-sabi", translation: "La belleza de lo imperfecto y lo efímero." },
+  { japanese: "木漏れ日", romaji: "Komorebi", translation: "La luz del sol filtrada entre las hojas." },
+  { japanese: "生き甲斐", romaji: "Ikigai", translation: "Aquello que da sentido a la vida." },
+  { japanese: "我慢", romaji: "Gaman", translation: "Aguantar con paciencia y dignidad." },
 ] as const;
 
-/** Una frase por día, igual que getDailyQuote() de la portada. */
-export function getDailyJapanesePhrase() {
+/** Kanjis sueltos, uno por cada dos días (alternan con las frases). */
+export const JAPANESE_KANJI = [
+  { japanese: "愛", romaji: "Ai", translation: "Amor." },
+  { japanese: "恋", romaji: "Koi", translation: "Amor romántico, enamoramiento." },
+  { japanese: "命", romaji: "Inochi", translation: "Vida." },
+  { japanese: "生", romaji: "Sei · Ikiru", translation: "Nacer, vivir." },
+  { japanese: "死", romaji: "Shi", translation: "Muerte." },
+  { japanese: "夢", romaji: "Yume", translation: "Sueño." },
+  { japanese: "心", romaji: "Kokoro", translation: "Corazón, mente." },
+  { japanese: "魂", romaji: "Tamashii", translation: "Alma." },
+  { japanese: "絆", romaji: "Kizuna", translation: "Vínculo entre personas." },
+  { japanese: "縁", romaji: "En", translation: "Destino que une, lazo." },
+  { japanese: "友", romaji: "Tomo", translation: "Amigo." },
+  { japanese: "力", romaji: "Chikara", translation: "Fuerza." },
+  { japanese: "勇", romaji: "Yū", translation: "Valor." },
+  { japanese: "義", romaji: "Gi", translation: "Justicia, deber." },
+  { japanese: "誠", romaji: "Makoto", translation: "Sinceridad." },
+  { japanese: "忍", romaji: "Shinobu", translation: "Resistir, aguantar." },
+  { japanese: "和", romaji: "Wa", translation: "Armonía, paz." },
+  { japanese: "静", romaji: "Shizuka", translation: "Calma, quietud." },
+  { japanese: "無", romaji: "Mu", translation: "Nada, vacío." },
+  { japanese: "禅", romaji: "Zen", translation: "Meditación, quietud interior." },
+  { japanese: "道", romaji: "Michi", translation: "Camino." },
+  { japanese: "時", romaji: "Toki", translation: "Tiempo." },
+  { japanese: "運", romaji: "Un", translation: "Suerte, fortuna." },
+  { japanese: "美", romaji: "Bi", translation: "Belleza." },
+  { japanese: "笑", romaji: "Emi · Warai", translation: "Sonrisa, risa." },
+  { japanese: "涙", romaji: "Namida", translation: "Lágrima." },
+  { japanese: "光", romaji: "Hikari", translation: "Luz." },
+  { japanese: "影", romaji: "Kage", translation: "Sombra." },
+  { japanese: "闇", romaji: "Yami", translation: "Oscuridad." },
+  { japanese: "空", romaji: "Sora", translation: "Cielo." },
+  { japanese: "海", romaji: "Umi", translation: "Mar." },
+  { japanese: "山", romaji: "Yama", translation: "Montaña." },
+  { japanese: "月", romaji: "Tsuki", translation: "Luna." },
+  { japanese: "星", romaji: "Hoshi", translation: "Estrella." },
+  { japanese: "風", romaji: "Kaze", translation: "Viento." },
+  { japanese: "雨", romaji: "Ame", translation: "Lluvia." },
+  { japanese: "雪", romaji: "Yuki", translation: "Nieve." },
+  { japanese: "火", romaji: "Hi", translation: "Fuego." },
+  { japanese: "水", romaji: "Mizu", translation: "Agua." },
+  { japanese: "花", romaji: "Hana", translation: "Flor." },
+  { japanese: "桜", romaji: "Sakura", translation: "Cerezo en flor." },
+  { japanese: "春", romaji: "Haru", translation: "Primavera." },
+  { japanese: "夏", romaji: "Natsu", translation: "Verano." },
+  { japanese: "秋", romaji: "Aki", translation: "Otoño." },
+  { japanese: "冬", romaji: "Fuyu", translation: "Invierno." },
+  { japanese: "朝", romaji: "Asa", translation: "Mañana." },
+  { japanese: "夜", romaji: "Yoru", translation: "Noche." },
+] as const;
+
+/** Un elemento por día: frase en los días pares, kanji suelto en los impares. */
+export function getDailyJapanesePhrase(): { japanese: string; romaji: string; translation: string } {
   const day = Math.floor(Date.now() / 86_400_000);
-  return JAPANESE_PHRASES[day % JAPANESE_PHRASES.length];
+  const list = day % 2 === 0 ? JAPANESE_PHRASES : JAPANESE_KANJI;
+  return list[Math.floor(day / 2) % list.length];
 }
 
 const ORDINAL_WORDS: Record<string, number> = {
