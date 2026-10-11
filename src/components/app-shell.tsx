@@ -1,17 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, BookCheck, House, Lock, Menu, Plus, Search, Unlock, X } from "lucide-react";
+import { BarChart3, BookCheck, House, Lock, Menu, Plus, Search, Tv, Unlock, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useDeferredValue, useEffect, useState, type ReactNode } from "react";
+import { AddAnimeModal } from "@/components/add-anime-modal";
 import { AddBookModal } from "@/components/add-book-modal";
 import { BookCover } from "@/components/book-cover";
+import { AnimeCover } from "@/components/anime-cover";
+import { AnimeProvider, useAnime } from "@/components/anime-provider";
 import { LibraryProvider, useLibrary } from "@/components/library-provider";
+import { ANIME_STATUS_LABELS } from "@/lib/anime-utils";
 import { STATUS_LABELS } from "@/lib/book-utils";
 
 function ShellContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { books, editing, editorConfigured, storageMode, notice, clearNotice, lock, unlock } = useLibrary();
+  const { anime } = useAnime();
+  const onAnime = pathname.startsWith("/anime");
+  const addLabel = onAnime ? "Añadir anime" : "Añadir libro";
   const [addOpen, setAddOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -24,6 +31,11 @@ function ShellContent({ children }: { children: ReactNode }) {
   const results = deferredQuery
     ? books.filter((book) =>
         `${book.title} ${book.authors.join(" ")}`.toLocaleLowerCase("es").includes(deferredQuery),
+      )
+    : [];
+  const animeResults = deferredQuery
+    ? anime.filter((item) =>
+        `${item.title} ${item.titleJapanese}`.toLocaleLowerCase("es").includes(deferredQuery),
       )
     : [];
 
@@ -39,8 +51,10 @@ function ShellContent({ children }: { children: ReactNode }) {
   const links = [
     { href: "/", icon: House, label: "Inicio" },
     { href: "/leidos", icon: BookCheck, label: "Leídos" },
+    { href: "/anime", icon: Tv, label: "Anime" },
     { href: "/estadisticas", icon: BarChart3, label: "Estadísticas" },
   ];
+  const isActive = (href: string) => (href === "/anime" ? onAnime : pathname === href);
 
   return (
     <div className="app-frame">
@@ -51,7 +65,7 @@ function ShellContent({ children }: { children: ReactNode }) {
         </Link>
         <nav className={`main-nav${menuOpen ? " open" : ""}`} aria-label="Navegación principal">
           {links.map(({ href, icon: Icon, label }) => (
-            <Link key={href} href={href} className={pathname === href ? "active" : ""} onClick={() => setMenuOpen(false)}>
+            <Link key={href} href={href} className={isActive(href) ? "active" : ""} onClick={() => setMenuOpen(false)}>
               <Icon size={15} aria-hidden="true" />{label}
             </Link>
           ))}
@@ -61,8 +75,8 @@ function ShellContent({ children }: { children: ReactNode }) {
           <button className="icon-button" onClick={() => editing ? void lock() : setLockOpen(true)} aria-label={editing ? "Bloquear edición" : "Desbloquear edición"} title={editing ? "Bloquear edición" : "Desbloquear edición"}>
             {editing ? <Unlock size={18} /> : <Lock size={18} />}
           </button>
-          <button className="button primary" disabled={!editing} onClick={() => setAddOpen(true)} aria-label="Añadir libro">
-            <Plus size={18} aria-hidden="true" /><span className="desktop-label">Añadir libro</span>
+          <button className="button primary" disabled={!editing} onClick={() => setAddOpen(true)} aria-label={addLabel}>
+            <Plus size={18} aria-hidden="true" /><span className="desktop-label">{addLabel}</span>
           </button>
           <button
             className="icon-button menu-button"
@@ -76,12 +90,12 @@ function ShellContent({ children }: { children: ReactNode }) {
       </header>
       <main className="page-shell">{children}</main>
       <nav className="mobile-nav" aria-label="Navegación móvil">
-        {links.slice(0, 2).map(({ href, icon: Icon, label }) => (
-          <Link key={href} href={href} className={pathname === href ? "active" : ""}>
+        {links.slice(0, 3).map(({ href, icon: Icon, label }) => (
+          <Link key={href} href={href} className={isActive(href) ? "active" : ""}>
             <Icon size={20} aria-hidden="true" /><small>{label}</small>
           </Link>
         ))}
-        <button disabled={!editing} onClick={() => setAddOpen(true)} aria-label="Añadir libro">
+        <button disabled={!editing} onClick={() => setAddOpen(true)} aria-label={addLabel}>
           <Plus size={22} aria-hidden="true" /><small>Añadir</small>
         </button>
         <Link href="/estadisticas" className={pathname === "/estadisticas" ? "active" : ""}>
@@ -90,10 +104,11 @@ function ShellContent({ children }: { children: ReactNode }) {
       </nav>
       <footer className="app-footer">
         <span><i className={storageMode === "supabase" ? "online" : ""} />{storageMode === "supabase" ? "Sincronizado con Supabase" : "Guardado en este dispositivo"}</span>
-        <span>{books.length} {books.length === 1 ? "libro" : "libros"}</span>
+        <span>{books.length} {books.length === 1 ? "libro" : "libros"} · {anime.length} {anime.length === 1 ? "anime" : "animes"}</span>
       </footer>
 
-      <AddBookModal open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddBookModal open={addOpen && !onAnime} onClose={() => setAddOpen(false)} />
+      <AddAnimeModal open={addOpen && onAnime} onClose={() => setAddOpen(false)} />
       {lockOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setLockOpen(false)}>
           <form className="lock-panel" onMouseDown={(event) => event.stopPropagation()} onSubmit={async (event) => {
@@ -130,17 +145,24 @@ function ShellContent({ children }: { children: ReactNode }) {
           <div className="global-search-panel" onMouseDown={(event) => event.stopPropagation()}>
             <div className="search-field large">
               <span aria-hidden="true">⌕</span>
-              <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por título o autor" />
+              <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar libros y anime" />
               <button className="key-button" onClick={() => setSearchOpen(false)}>Esc</button>
             </div>
             <div className="global-results">
-              {!deferredQuery && <p className="empty-inline">Busca entre tus {books.length} libros.</p>}
-              {deferredQuery && !results.length && <p className="empty-inline">No hay resultados para “{query}”.</p>}
+              {!deferredQuery && <p className="empty-inline">Busca entre tus {books.length} libros y {anime.length} animes.</p>}
+              {deferredQuery && !results.length && !animeResults.length && <p className="empty-inline">No hay resultados para “{query}”.</p>}
               {results.map((book) => (
                 <Link key={book.$id} href={`/libro/${book.$id}`} onClick={() => setSearchOpen(false)} className="global-result">
                   <BookCover title={book.title} url={book.coverUrl} />
                   <span><strong>{book.title}</strong><small>{book.authors.join(", ")}</small></span>
                   <em className={`status-chip ${book.status}`}>{STATUS_LABELS[book.status]}</em>
+                </Link>
+              ))}
+              {animeResults.map((item) => (
+                <Link key={item.$id} href={`/anime/${item.$id}`} onClick={() => setSearchOpen(false)} className="global-result">
+                  <AnimeCover title={item.title} url={item.coverUrl} />
+                  <span><strong>{item.title}</strong><small>{item.titleJapanese || "Anime"}</small></span>
+                  <em className={`status-chip ${item.status}`}>{ANIME_STATUS_LABELS[item.status]}</em>
                 </Link>
               ))}
             </div>
@@ -152,5 +174,5 @@ function ShellContent({ children }: { children: ReactNode }) {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  return <LibraryProvider><ShellContent>{children}</ShellContent></LibraryProvider>;
+  return <LibraryProvider><AnimeProvider><ShellContent>{children}</ShellContent></AnimeProvider></LibraryProvider>;
 }

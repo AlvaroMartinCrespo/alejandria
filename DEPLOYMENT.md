@@ -43,6 +43,14 @@ GOOGLE_BOOKS_API_KEY
 
 `GOOGLE_BOOKS_API_KEY` es opcional. Ninguna clave privada debe llevar el prefijo `NEXT_PUBLIC_`.
 
+## 4 bis. Migración de Anime (instalaciones existentes)
+
+Antes de desplegar la versión con anime, pega `supabase/migration-anime.sql` en **Supabase → SQL Editor → Run**. Es aditiva e idempotente: crea la tabla `anime` y la función `reorder_anime` sin tocar `books`, `collections` ni `reorder_books`. Sin la migración los libros funcionan igual y `/anime` muestra el aviso "Falta aplicar la migración de anime en Supabase". No hacen falta variables de entorno nuevas: la búsqueda usa Jikan y AniList sin clave.
+
+Rutas nuevas: `/anime`, `/anime/[id]`, `/anime/estadisticas`, `/api/anime`, `/api/anime/[id]`, `/api/anime/reorder`, `/api/anime/import` y `/api/anime-search`. Las mutaciones exigen sesión de edición (401 si está bloqueada).
+
+Desde la versión con anime, **JSON** exporta copias `version: 3` que incluyen `anime`. La restauración acepta copias v1, v2 y v3 (también las que solo traen anime) y siempre mezcla: nunca borra datos existentes. El PDF de **/exportar** incluye los grupos de anime debajo de los libros.
+
 ## 5. Importar la copia
 
 Despliega la aplicación, abre **Estadísticas → Restaurar** y selecciona el JSON descargado de Appwrite. La operación conserva los IDs y fechas originales, actualiza coincidencias y no duplica libros con el mismo ID de Google Books.
@@ -71,3 +79,4 @@ El comando comprueba inicio, leídos, estadísticas, exportación y `/api/health
 4. Reordena dos pendientes.
 5. Exporta JSON y PDF.
 6. Restaura el JSON y confirma que no crea duplicados.
+7. Abre `/anime`, desbloquea la edición y prueba un alta (búsqueda y manual), escribir temporada y capítulo, reordenar y cambiar estados.

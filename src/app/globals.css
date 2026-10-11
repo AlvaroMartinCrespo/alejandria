@@ -2566,7 +2566,7 @@ textarea::placeholder {
     z-index: 35;
     min-height: var(--nav-mobile-h);
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     padding: 6px max(8px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px, env(safe-area-inset-left));
     border-top: 1px solid rgba(255,255,255,.12);
     background: rgba(11,12,12,.94);
@@ -3223,5 +3223,803 @@ textarea::placeholder {
 
   .print-header h1 {
     font-size: 42px;
+  }
+}
+/* ===== ANIME ===== */
+
+/* ---- Colores de estado ---- */
+.status-control.watching,
+.status-option.watching,
+.status-chip.watching,
+.status-legend .watching {
+  --status-color: var(--acid);
+  --legend-color: var(--acid);
+}
+
+.status-control.to_watch,
+.status-option.to_watch,
+.status-chip.to_watch,
+.status-legend .to_watch {
+  --status-color: var(--gold);
+  --legend-color: var(--gold);
+}
+
+.status-control.watched,
+.status-option.watched,
+.status-chip.watched,
+.status-legend .watched {
+  --status-color: var(--coral);
+  --legend-color: var(--coral);
+}
+
+.status-control.on_hold,
+.status-option.on_hold,
+.status-chip.on_hold,
+.status-legend .on_hold {
+  --status-color: #8fb7e8;
+  --legend-color: #8fb7e8;
+}
+
+.status-control.dropped,
+.status-option.dropped,
+.status-chip.dropped,
+.status-legend .dropped {
+  --status-color: var(--subtle);
+  --legend-color: var(--subtle);
+}
+
+.status-chip.watching { color: var(--acid); border-color: #455338; }
+.status-chip.to_watch { color: var(--gold); border-color: #69572f; }
+.status-chip.watched { color: var(--coral); border-color: #704038; }
+.status-chip.on_hold { color: #8fb7e8; border-color: #354453; }
+.status-chip.dropped { color: var(--muted); border-color: #3a3f3c; }
+
+.anime-status-legend {
+  gap: 11px;
+}
+
+/* ---- Cabecera con frase japonesa ---- */
+.japanese-heading blockquote {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.japanese-heading .japanese-kanji {
+  margin: 0 0 8px;
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", Georgia, serif;
+  font-size: clamp(40px, 7vw, 72px);
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.japanese-heading .japanese-romaji {
+  display: block;
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  font-style: italic;
+}
+
+.japanese-heading cite {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.anime-tabs {
+  margin-top: -8px;
+}
+
+/* ---- Página /anime ---- */
+.anime-now {
+  min-height: 0;
+}
+
+.anime-now::after {
+  content: "見る";
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", Georgia, serif;
+  font-size: 150px;
+}
+
+.anime-now .now-reading-list {
+  margin-top: 18px;
+}
+
+.anime-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 18px;
+}
+
+.anime-toolbar small {
+  color: var(--subtle);
+  font-size: 11px;
+}
+
+.anime-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--subtle);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.anime-sort select,
+.anime-season-select select {
+  min-height: 36px;
+  max-width: 100%;
+  padding: 0 30px 0 12px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #111312;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.anime-list {
+  display: block;
+}
+
+.anime-year-group + .anime-year-group {
+  border-top: 1px solid var(--line);
+}
+
+.anime-year-label {
+  margin: 0;
+  padding: 18px 24px 6px;
+  color: var(--coral);
+  font-family: Georgia, serif;
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.anime-year-label small {
+  color: var(--subtle);
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  font-size: 11px;
+}
+
+/* ---- Fila de anime ---- */
+.anime-row {
+  align-items: start;
+  min-height: 118px;
+}
+
+.anime-row .status-control,
+.anime-row .favorite-button {
+  align-self: start;
+}
+
+.anime-row-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.anime-row-copy .book-title-link {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.anime-title-ja {
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", Georgia, serif;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anime-progress-text {
+  color: var(--acid);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.anime-progress-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 12px;
+  margin-top: 4px;
+}
+
+.anime-season-select,
+.anime-episode-field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  color: var(--subtle);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.anime-episode-input {
+  width: 92px;
+  min-height: 36px;
+  padding: 0 10px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #0d0f0e;
+  font-size: 16px;
+  font-weight: 700;
+  scroll-margin-bottom: var(--nav-mobile-h);
+}
+
+.anime-episode-input:focus {
+  border-color: var(--acid);
+  outline: none;
+}
+
+.anime-step-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.anime-step-buttons button {
+  min-width: 40px;
+  min-height: 36px;
+  padding: 0 12px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #111312;
+  font-size: 12px;
+  font-weight: 700;
+  transition: color .2s, border-color .2s;
+}
+
+.anime-step-buttons button:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: #50584f;
+}
+
+.anime-step-buttons button:disabled {
+  cursor: default;
+  opacity: .35;
+}
+
+.anime-step-buttons .anime-new-season {
+  color: var(--acid);
+  border-color: #455338;
+}
+
+.anime-mark-watched {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+.anime-row .status-menu {
+  max-width: calc(100vw - 32px);
+}
+
+/* ---- Modal de añadir anime ---- */
+.anime-modal-tabs {
+  display: flex;
+  gap: 22px;
+  padding: 0 30px;
+  border-bottom: 1px solid var(--line);
+}
+
+.anime-modal-tabs button {
+  min-height: 44px;
+  padding: 0;
+  color: var(--subtle);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.anime-modal-tabs button.active {
+  color: var(--acid);
+  border-bottom-color: var(--acid);
+}
+
+.anime-search-hint {
+  margin: 0;
+  padding: 12px 30px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 12px;
+}
+
+.anime-result {
+  align-items: start;
+}
+
+.anime-result > div:nth-child(2) {
+  min-width: 0;
+}
+
+.anime-result strong {
+  overflow-wrap: anywhere;
+}
+
+.anime-result p[lang="ja"] {
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", Georgia, serif;
+}
+
+.anime-result .book-cover {
+  width: 52px;
+  height: 74px;
+}
+
+.anime-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.anime-start-fields {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #0d0f0e;
+}
+
+.anime-start-fields label,
+.anime-manual-form label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  color: var(--subtle);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.anime-start-fields input {
+  width: 120px;
+  max-width: 100%;
+}
+
+.anime-start-fields input,
+.anime-manual-form input,
+.anime-manual-form select,
+.anime-manual-form textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #0d0f0e;
+  font-size: 16px;
+}
+
+.anime-start-fields input {
+  width: 120px;
+}
+
+.anime-manual-form textarea {
+  min-height: 96px;
+  padding: 10px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.anime-manual-form {
+  display: grid;
+  gap: 14px;
+  padding: 22px 30px 28px;
+  overflow-y: auto;
+}
+
+.anime-manual-form .button {
+  justify-self: start;
+}
+
+.anime-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* ---- Detalle /anime/[id] ---- */
+.anime-progress-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 30px;
+}
+
+.anime-progress-panel .anime-progress-text {
+  margin: 0;
+  font-size: 15px;
+}
+
+.anime-progress-panel .detail-facts {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: stretch;
+}
+
+.anime-progress-panel .anime-step-buttons {
+  align-content: center;
+  padding: 20px 25px;
+}
+
+.anime-progress-panel .detail-facts select,
+.anime-facts select,
+.anime-facts input,
+.anime-progress-panel .detail-facts input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #0d0f0e;
+  font-size: 16px;
+}
+
+.anime-facts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 30px;
+}
+
+.anime-facts > label,
+.anime-facts > div {
+  border-bottom: 1px solid var(--line);
+}
+
+.anime-facts > *:nth-child(3n) {
+  border-right: 0;
+}
+
+.anime-facts > *:last-child {
+  border-bottom: 0;
+}
+
+.anime-facts .rating-fact button {
+  min-width: 32px;
+  min-height: 40px;
+}
+
+.detail-title .anime-title-ja {
+  font-size: 15px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* ---- Estadísticas de anime ---- */
+.anime-genres-chart {
+  min-width: 0;
+}
+
+/* ---- Tablet ---- */
+@media (max-width: 900px) {
+  .anime-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .anime-facts > *:nth-child(3n) {
+    border-right: 1px solid var(--line);
+  }
+
+  .anime-facts > *:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .anime-now::after {
+    font-size: 110px;
+  }
+
+  .anime-year-label {
+    padding-right: 17px;
+    padding-left: 17px;
+  }
+}
+
+/* ---- Móvil ---- */
+@media (max-width: 680px) {
+  .japanese-heading {
+    min-height: 0;
+  }
+
+  .japanese-heading .japanese-romaji {
+    font-size: 13px;
+  }
+
+  .anime-now::after {
+    display: none;
+  }
+
+  .anime-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .anime-sort {
+    justify-content: space-between;
+  }
+
+  .anime-sort select {
+    flex: 1;
+    min-height: 44px;
+  }
+
+  /* Filas en una columna: portada 52 px + texto, controles debajo a ancho completo. */
+  .anime-row {
+    grid-template-columns: 52px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px 12px;
+    padding: 12px;
+  }
+
+  .anime-row[data-sortable] {
+    grid-template-columns: 24px 52px minmax(0, 1fr);
+  }
+
+  .anime-row .book-cover {
+    width: 52px;
+    height: 75px;
+  }
+
+  .anime-row-copy {
+    padding-right: 48px;
+  }
+
+  .anime-row .favorite-button {
+    top: 4px;
+    right: 4px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .anime-row .status-control,
+  .anime-row[data-sortable] .status-control {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .anime-row .status-control summary {
+    min-height: 44px;
+    width: 100%;
+  }
+
+  .anime-row .status-menu {
+    right: 0;
+    left: 0;
+    width: auto;
+  }
+
+  .anime-row .status-menu button {
+    min-height: 44px;
+  }
+
+  .anime-row .reorder-buttons,
+  .anime-row[data-sortable] .reorder-buttons {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .anime-row .reorder-buttons button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .anime-row .drag-handle {
+    width: 24px;
+    height: 44px;
+  }
+
+  .anime-progress-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .anime-episode-input,
+  .anime-season-select select {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .anime-step-buttons {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr;
+    gap: 8px;
+  }
+
+  .anime-step-buttons button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 8px;
+  }
+
+  .anime-mark-watched {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .anime-modal-tabs {
+    gap: 24px;
+    padding: 0 max(17px, env(safe-area-inset-right)) 0 max(17px, env(safe-area-inset-left));
+  }
+
+  .anime-search-hint {
+    padding: 12px max(17px, env(safe-area-inset-right)) 12px max(17px, env(safe-area-inset-left));
+  }
+
+  .anime-result.result-row {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .anime-result .book-cover {
+    width: 48px;
+    height: 68px;
+  }
+
+  .anime-result .button,
+  .anime-result-actions {
+    grid-column: 1 / -1;
+  }
+
+  .anime-result-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .anime-result .button.compact,
+  .anime-start-fields .button {
+    min-height: 44px;
+    width: 100%;
+  }
+
+  .anime-start-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .anime-start-fields input {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .anime-start-fields .button {
+    grid-column: 1 / -1;
+  }
+
+  .anime-manual-form {
+    padding: 18px max(17px, env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom, 0px)) max(17px, env(safe-area-inset-left));
+  }
+
+  .anime-manual-form input,
+  .anime-manual-form select {
+    min-height: 44px;
+  }
+
+  .anime-manual-form .button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .anime-form-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .anime-progress-panel .detail-facts {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .anime-progress-panel .anime-step-buttons {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 15px;
+    border-top: 1px solid var(--line);
+  }
+
+  .anime-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .anime-facts > *,
+  .anime-facts > *:nth-child(2n),
+  .anime-facts > *:nth-child(3n) {
+    border-right: 0;
+  }
+
+  .anime-facts input,
+  .anime-facts select,
+  .anime-progress-panel .detail-facts input,
+  .anime-progress-panel .detail-facts select {
+    min-height: 44px;
+  }
+
+  .anime-facts .rating-fact button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .anime-year-label {
+    font-size: 19px;
+  }
+
+  .anime-year-group .anime-row {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+}
+
+/* ---- Móvil pequeño (360–390 px) ---- */
+@media (max-width: 390px) {
+  .japanese-heading .japanese-kanji {
+    font-size: 40px;
+  }
+
+  .anime-row-copy {
+    padding-right: 44px;
+  }
+
+  .anime-form-grid,
+  .anime-start-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .anime-step-buttons {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .anime-step-buttons .anime-new-season {
+    grid-column: 1 / -1;
+  }
+
+  .anime-title-ja {
+    font-size: 11px;
+  }
+
+  .anime-modal-tabs button {
+    font-size: 10px;
+  }
+}
+
+/* ---- Movimiento reducido ---- */
+@media (prefers-reduced-motion: reduce) {
+  .anime-step-buttons button,
+  .anime-row,
+  .anime-now {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---- Impresión ---- */
+@media print {
+  .anime-tabs,
+  .anime-toolbar,
+  .anime-progress-controls,
+  .anime-modal-tabs,
+  .anime-mark-watched {
+    display: none !important;
+  }
+
+  .anime-now::after {
+    display: none;
+  }
+
+  .japanese-heading .japanese-kanji {
+    font-size: 40px;
   }
 }

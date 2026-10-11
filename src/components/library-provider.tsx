@@ -28,6 +28,7 @@ interface LibraryContextValue {
   storageMode: "supabase" | "local";
   notice: { type: "success" | "error"; message: string } | null;
   clearNotice: () => void;
+  showNotice: (type: "success" | "error", message: string) => void;
   unlock: (password: string) => Promise<void>;
   lock: () => Promise<void>;
   addBook: (result: GoogleBookResult) => Promise<Book>;
@@ -319,6 +320,8 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   async function restoreBackup(value: unknown) {
     requireEditing();
     const imported = parseBookBackup(value);
+    // Copia con solo anime: no hay nada que restaurar en libros.
+    if (!imported.books.length && !imported.collections.length) return;
 
     if (storageMode === "local") {
       setBooks((current) => {
@@ -388,6 +391,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         storageMode,
         notice,
         clearNotice: () => setNotice(null),
+        showNotice,
         unlock,
         lock,
         addBook,

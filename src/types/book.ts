@@ -1,3 +1,5 @@
+import type { Anime } from "@/types/anime";
+
 /** Estados mutuamente excluyentes dentro del recorrido de lectura. */
 export type BookStatus = "to_read" | "reading" | "read";
 
@@ -33,11 +35,13 @@ export interface Collection {
 
 export interface LibraryBackup {
   format: "alejandria-library-backup";
-  version: 1 | 2;
+  version: 1 | 2 | 3;
   exportedAt: string;
   bookCount: number;
   books: Book[];
   collections?: Collection[];
+  /** Solo en copias v3. Las copias v1/v2 no lo traen. */
+  anime?: Anime[];
 }
 
 /**

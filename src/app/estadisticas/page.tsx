@@ -5,7 +5,10 @@ import Link from "next/link";
 import { Download, FileText, Upload } from "lucide-react";
 import { LibraryStatusChart, RatingChart, ReadingYearsChart } from "@/components/library-charts";
 import { BookRow } from "@/components/book-row";
+import { useAnime } from "@/components/anime-provider";
 import { useLibrary } from "@/components/library-provider";
+import { animeEpisodesWatched } from "@/lib/anime-utils";
+import { parseAnimeBackup } from "@/lib/anime-validation";
 import type { Book, LibraryBackup } from "@/types/book";
 
 type Tab = "resumen" | "favoritos" | "valoraciones";
@@ -23,6 +26,7 @@ function sortByFinishedDesc(a: Book, b: Book) {
 
 export default function StatisticsPage() {
   const { books, collections, editing, restoreBackup } = useLibrary();
+  const { anime, animeError, restoreAnime } = useAnime();
   const [tab, setTab] = useState<Tab>("resumen");
 
   const completed = books.filter((book) => book.status === "read");
@@ -67,14 +71,23 @@ export default function StatisticsPage() {
     return completed.filter((book) => book.rating === rating).sort(sortByFinishedDesc);
   }
 
+  // Anime vistos este año (sección final de Resumen).
+  const animeYear = new Date().getFullYear();
+  const animeThisYear = anime.filter((item) => item.status === "watched" && item.finishedYear === animeYear);
+  const animeThisYearEpisodes = animeThisYear.reduce((sum, item) => sum + animeEpisodesWatched(item), 0);
+  const latestAnime = [...animeThisYear]
+    .sort((left, right) => (right.lastWatchedAt ?? right.addedAt).localeCompare(left.lastWatchedAt ?? left.addedAt))
+    .slice(0, 6);
+
   function exportJson() {
     const backup: LibraryBackup = {
       format: "alejandria-library-backup",
-      version: 2,
+      version: 3,
       exportedAt: new Date().toISOString(),
       bookCount: books.length,
       books,
       collections,
+      anime,
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
     const link = document.createElement("a");
@@ -87,7 +100,11 @@ export default function StatisticsPage() {
   async function importJson(file: File | undefined) {
     if (!file) return;
     try {
-      await restoreBackup(JSON.parse(await file.text()) as unknown);
+      const parsed = JSON.parse(await file.text()) as unknown;
+      // Valida también los animes antes de tocar nada (v1/v2 no traen `anime`).
+      const importedAnime = parseAnimeBackup(parsed);
+      await restoreBackup(parsed);
+      if (importedAnime.length) await restoreAnime(importedAnime);
     } catch (error) {
       const message = error instanceof SyntaxError
         ? "El archivo no contiene JSON válido."
@@ -159,6 +176,19 @@ export default function StatisticsPage() {
               ? <ReadingYearsChart data={yearData} />
               : <div className="big-empty compact"><p>Los años aparecerán cuando termines tus primeras lecturas.</p></div>}
           </section>
+          {anime.length > 0 && !animeError && (
+            <section className="year-chart anime-year-summary">
+              <div className="section-title"><div><p className="eyebrow">Anime</p><h2>Anime vistos este año</h2></div></div>
+              <div className="stat-grid">
+                <article><span>Animes vistos</span><strong>{animeThisYear.length}</strong><small>{animeYear}</small></article>
+                <article><span>Capítulos</span><strong>{animeThisYearEpisodes.toLocaleString("es")}</strong><small>aproximadamente</small></article>
+              </div>
+              {latestAnime.length > 0
+                ? <ul className="anime-latest-list">{latestAnime.map((item) => <li key={item.$id}><Link href={`/anime/${item.$id}`}>{item.title}</Link></li>)}</ul>
+                : <div className="big-empty compact"><p>Todavía no has terminado ningún anime este año.</p></div>}
+              <Link className="button secondary" href="/anime/estadisticas">Ver todas las estadísticas de anime →</Link>
+            </section>
+          )}
         </>
       )}
 

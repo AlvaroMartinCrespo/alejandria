@@ -149,10 +149,16 @@ function backupBook(value: unknown): Book {
 }
 
 export function parseBookBackup(value: unknown): { books: Book[]; collections: Collection[] } {
+  const record = !Array.isArray(value) && typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : null;
+  // Una copia v3 puede traer solo anime (sin libros): no es un error.
+  const animeList = record ? record.anime : undefined;
+  const hasAnime = Array.isArray(animeList) && animeList.length > 0;
   const candidate = Array.isArray(value)
     ? value
-    : typeof value === "object" && value !== null
-      ? (value as Record<string, unknown>).books
+    : record
+      ? (record.books === undefined && hasAnime ? [] : record.books)
       : null;
   if (!Array.isArray(candidate)) {
     throw new Error("El archivo no contiene una biblioteca válida.");
@@ -163,7 +169,7 @@ export function parseBookBackup(value: unknown): { books: Book[]; collections: C
     const book = backupBook(item);
     unique.set(book.googleBooksId || book.$id, book);
   }
-  if (!unique.size) throw new Error("No se encontraron libros en el archivo.");
+  if (!unique.size && !hasAnime) throw new Error("No se encontraron libros en el archivo.");
 
   const sourceCollections = !Array.isArray(value) && typeof value === "object" && value !== null
     ? (value as Record<string, unknown>).collections

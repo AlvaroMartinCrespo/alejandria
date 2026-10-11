@@ -1,15 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { useAnime } from "@/components/anime-provider";
 import { useLibrary } from "@/components/library-provider";
 import { LibrarySkeleton } from "@/components/library-skeleton";
+import { ANIME_STATUS_LABELS } from "@/lib/anime-utils";
 import { STATUS_LABELS } from "@/lib/book-utils";
+import type { AnimeStatus } from "@/types/anime";
 import type { BookStatus } from "@/types/book";
 
 const GROUPS: BookStatus[] = ["reading", "to_read", "read"];
+const ANIME_GROUPS: AnimeStatus[] = ["watching", "to_watch", "on_hold", "watched", "dropped"];
 
 export default function PrintableLibraryPage() {
   const { books, collections, loading } = useLibrary();
+  const { anime, animeLoading } = useAnime();
   const groups = [
     ...GROUPS.filter((status) => status !== "to_read").map((status) => ({
       key: status,
@@ -39,8 +44,17 @@ export default function PrintableLibraryPage() {
       books: books.filter((book) => book.favorite).sort((a, b) => a.title.localeCompare(b.title, "es")),
     },
   ];
+  const animeGroups = ANIME_GROUPS.map((status) => ({
+    key: `anime-${status}`,
+    label: `Anime · ${ANIME_STATUS_LABELS[status]}`,
+    items: anime
+      .filter((item) => item.status === status)
+      .sort((a, b) => status === "watched"
+        ? (b.finishedYear ?? 0) - (a.finishedYear ?? 0) || a.title.localeCompare(b.title, "es")
+        : a.title.localeCompare(b.title, "es")),
+  }));
 
-  if (loading) return <LibrarySkeleton rows={5} />;
+  if (loading || animeLoading) return <LibrarySkeleton rows={5} />;
 
   return (
     <article className="print-library">
@@ -66,7 +80,29 @@ export default function PrintableLibraryPage() {
           </section>
         );
       })}
-      {!books.length && <div className="big-empty"><p>La biblioteca todavía está vacía.</p></div>}
+      {animeGroups.map((group) => {
+        if (!group.items.length) return null;
+        return (
+          <section className="print-group" key={group.key}>
+            <div className="print-group-title"><h2>{group.label}</h2><span>{group.items.length}</span></div>
+            <div className="print-table">
+              {group.items.map((item) => (
+                <div className="print-row" key={item.$id}>
+                  <strong>{item.title}</strong>
+                  <span>{item.titleJapanese || item.mediaFormat || "—"}</span>
+                  <span>
+                    {item.status === "watched"
+                      ? item.finishedYear ?? item.releaseYear ?? "—"
+                      : `Temp. ${item.currentSeason} · Cap. ${item.currentEpisode}${item.totalEpisodes !== null ? ` / ${item.totalEpisodes}` : ""}`}
+                  </span>
+                  <span>{item.rating === null ? "Sin puntuar" : `${item.rating} / 5`}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      })}
+      {!books.length && !anime.length && <div className="big-empty"><p>La biblioteca todavía está vacía.</p></div>}
     </article>
   );
 }

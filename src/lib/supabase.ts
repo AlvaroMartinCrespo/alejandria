@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Anime } from "@/types/anime";
 import type { Book, Collection, GoogleBookResult } from "@/types/book";
 
 const BOOK_COLUMNS = [
@@ -295,4 +296,245 @@ export async function importBooks(incoming: Book[], incomingCollections: Collect
 
 export async function checkSupabase() {
   await request<Array<Pick<BookRow, "id">>>("books?select=id&limit=1");
+}
+
+/* ===== ANIME ===== */
+
+const ANIME_COLUMNS = [
+  "id",
+  "source_id",
+  "title",
+  "title_japanese",
+  "cover_url",
+  "release_year",
+  "media_format",
+  "genres",
+  "synopsis",
+  "status",
+  "favorite",
+  "rating",
+  "current_season",
+  "current_episode",
+  "total_episodes",
+  "total_seasons",
+  "finished_year",
+  "last_watched_at",
+  "sort_order",
+  "notes",
+  "added_at",
+].join(",");
+
+type AnimeRow = {
+  id: string;
+  source_id: string;
+  title: string;
+  title_japanese: string;
+  cover_url: string | null;
+  release_year: number | null;
+  media_format: string;
+  genres: string[];
+  synopsis: string;
+  status: Anime["status"];
+  favorite: boolean;
+  rating: number | null;
+  current_season: number;
+  current_episode: number;
+  total_episodes: number | null;
+  total_seasons: number | null;
+  finished_year: number | null;
+  last_watched_at: string | null;
+  sort_order: number | null;
+  notes: string;
+  added_at: string;
+};
+
+/** Se lanza al crear un anime cuyo `source_id` ya existe (las rutas lo traducen a 409). */
+export class AnimeDuplicateError extends Error {
+  constructor() {
+    super("Este anime ya está en tu lista");
+    this.name = "AnimeDuplicateError";
+  }
+}
+
+function fromAnimeRow(row: AnimeRow): Anime {
+  return {
+    $id: row.id,
+    sourceId: row.source_id,
+    title: row.title,
+    titleJapanese: row.title_japanese,
+    coverUrl: row.cover_url,
+    releaseYear: row.release_year,
+    mediaFormat: row.media_format,
+    genres: row.genres,
+    synopsis: row.synopsis,
+    status: row.status,
+    favorite: row.favorite,
+    rating: row.rating,
+    currentSeason: row.current_season,
+    currentEpisode: row.current_episode,
+    totalEpisodes: row.total_episodes,
+    totalSeasons: row.total_seasons,
+    finishedYear: row.finished_year,
+    lastWatchedAt: row.last_watched_at,
+    order: row.sort_order,
+    notes: row.notes,
+    addedAt: row.added_at,
+  };
+}
+
+function toAnimeRow(anime: Anime): AnimeRow {
+  return {
+    id: anime.$id,
+    source_id: anime.sourceId,
+    title: anime.title,
+    title_japanese: anime.titleJapanese,
+    cover_url: anime.coverUrl,
+    release_year: anime.releaseYear,
+    media_format: anime.mediaFormat,
+    genres: anime.genres,
+    synopsis: anime.synopsis,
+    status: anime.status,
+    favorite: anime.favorite,
+    rating: anime.rating,
+    current_season: anime.currentSeason,
+    current_episode: anime.currentEpisode,
+    total_episodes: anime.totalEpisodes,
+    total_seasons: anime.totalSeasons,
+    finished_year: anime.finishedYear,
+    last_watched_at: anime.lastWatchedAt,
+    sort_order: anime.order,
+    notes: anime.notes,
+    added_at: anime.addedAt,
+  };
+}
+
+export async function listAnime() {
+  const pageSize = 1000;
+  const anime: Anime[] = [];
+
+  for (let offset = 0; ; offset += pageSize) {
+    const rows = await request<AnimeRow[]>(
+      `anime?select=${ANIME_COLUMNS}&order=added_at.asc&offset=${offset}&limit=${pageSize}`,
+    );
+    anime.push(...rows.map(fromAnimeRow));
+    if (rows.length < pageSize) return anime;
+  }
+}
+
+export async function createAnime(input: Omit<Anime, "$id" | "order" | "addedAt">) {
+  if (input.sourceId) {
+    const existing = await request<Array<Pick<AnimeRow, "id">>>(
+      `anime?select=id&source_id=eq.${encodeURIComponent(input.sourceId)}&limit=1`,
+    );
+    if (existing.length) throw new AnimeDuplicateError();
+  }
+
+  const anime: Anime = {
+    ...input,
+    $id: crypto.randomUUID(),
+    order: Date.now(),
+    addedAt: new Date().toISOString(),
+  };
+  try {
+    const rows = await request<AnimeRow[]>(`anime?select=${ANIME_COLUMNS}`, {
+      method: "POST",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(toAnimeRow(anime)),
+    });
+    return fromAnimeRow(rows[0]);
+  } catch (error) {
+    // Carrera entre dos altas simultáneas: el índice único de source_id también protege.
+    if (input.sourceId && error instanceof Error && /duplicate key|anime_source_id_unique/i.test(error.message)) {
+      throw new AnimeDuplicateError();
+    }
+    throw error;
+  }
+}
+
+export async function updateAnime(
+  id: string,
+  changes: Partial<Omit<Anime, "$id" | "sourceId" | "addedAt">>,
+) {
+  const fieldNames: Record<string, keyof AnimeRow> = {
+    title: "title",
+    titleJapanese: "title_japanese",
+    coverUrl: "cover_url",
+    releaseYear: "release_year",
+    mediaFormat: "media_format",
+    genres: "genres",
+    synopsis: "synopsis",
+    status: "status",
+    favorite: "favorite",
+    rating: "rating",
+    currentSeason: "current_season",
+    currentEpisode: "current_episode",
+    totalEpisodes: "total_episodes",
+    totalSeasons: "total_seasons",
+    finishedYear: "finished_year",
+    lastWatchedAt: "last_watched_at",
+    order: "sort_order",
+    notes: "notes",
+  };
+  const row = Object.fromEntries(
+    Object.entries(changes)
+      .filter(([key]) => key in fieldNames)
+      .map(([key, value]) => [fieldNames[key], value]),
+  );
+  const rows = await request<AnimeRow[]>(
+    `anime?id=eq.${encodeURIComponent(id)}&select=${ANIME_COLUMNS}`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(row),
+    },
+  );
+  if (!rows[0]) throw new Error("El anime no existe");
+  return fromAnimeRow(rows[0]);
+}
+
+export async function deleteAnime(id: string) {
+  await request<void>(`anime?id=eq.${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: { Prefer: "return=minimal" },
+  });
+}
+
+export async function reorderAnime(moves: Array<{ id: string; order: number }>) {
+  await request<void>("rpc/reorder_anime", {
+    method: "POST",
+    body: JSON.stringify({
+      moves: moves.map((move) => ({ id: move.id, sort_order: move.order })),
+    }),
+  });
+}
+
+/** Restaura copias: upsert por `id`, reutilizando el anime existente con el mismo `source_id`. Nunca borra. */
+export async function importAnime(incoming: Anime[]) {
+  const existing = await listAnime();
+  const byId = new Map(existing.map((anime) => [anime.$id, anime]));
+  const bySourceId = new Map(
+    existing.filter((anime) => anime.sourceId).map((anime) => [anime.sourceId, anime]),
+  );
+  const prepared = new Map<string, AnimeRow>();
+  for (const anime of incoming) {
+    const match = byId.get(anime.$id) || (anime.sourceId ? bySourceId.get(anime.sourceId) : undefined);
+    const row = toAnimeRow(match ? { ...anime, $id: match.$id } : anime);
+    prepared.set(row.id, row);
+  }
+  const rows = Array.from(prepared.values());
+
+  for (let offset = 0; offset < rows.length; offset += 500) {
+    await request<AnimeRow[]>("anime?on_conflict=id", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify(rows.slice(offset, offset + 500)),
+    });
+  }
+
+  return rows.length;
+}
+
+/** Falla si la tabla `anime` aún no existe (migración sin aplicar). */
+export async function checkAnimeTable() {
+  await request<Array<Pick<AnimeRow, "id">>>("anime?select=id&limit=1");
 }

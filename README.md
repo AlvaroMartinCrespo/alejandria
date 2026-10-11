@@ -20,7 +20,8 @@ Ideal para quien busca una alternativa **self-hosted** y minimalista a apps como
 - 🗂️ **Archivo de leídos por año**, con búsqueda y ordenación.
 - 📖 **Ficha de detalle editable**: estado de lectura, puntuación, año, notas personales y eliminación.
 - 📊 **Estadísticas de lectura**: totales, páginas leídas, autor más leído, media de valoraciones y gráfico anual.
-- 💾 **Exportación e importación**: backup completo en JSON y vista imprimible en PDF.
+- 📺 **Sección de Anime** (`/anime`, `/anime/[id]`, `/anime/estadisticas`): búsqueda con Jikan (respaldo AniList), temporada y capítulo escritos a mano, estados (Viendo, Pendiente, En pausa, Visto, Abandonado), orden manual, estadísticas y frase japonesa del día.
+- 💾 **Exportación e importación**: backup completo en JSON (v3, incluye anime; acepta v1/v2) y vista imprimible en PDF con libros y anime.
 - 🎲 **Modo "Sorpréndeme"** para elegir tu próxima lectura al azar.
 - 📱 **PWA instalable**, con funcionamiento offline gracias a un modo local automático cuando Supabase no está configurado.
 - 🔒 **Edición protegida opcionalmente**: candado con contraseña compartida y sesión persistente en cookie `HttpOnly`.
@@ -61,6 +62,7 @@ Abre [http://localhost:3000](http://localhost:3000).
 1. Crea un proyecto en [Supabase](https://supabase.com/dashboard).
 2. Ejecuta `supabase/schema.sql` desde el SQL Editor.
 3. Configura `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`.
+4. Para la sección de Anime en una instalación ya existente, ejecuta además `supabase/migration-anime.sql` (aditiva e idempotente) **antes** de desplegar. Los libros siguen funcionando aunque no exista la tabla `anime`; `/anime` mostrará un aviso de migración.
 
 ### Configuración de Google Books API
 
@@ -92,7 +94,11 @@ src/
   lib/
     supabase.ts   # acceso REST a Supabase (solo servidor)
     book-utils.ts # normalización y etiquetas
+    anime-*.ts    # utilidades y validación de anime
   types/book.ts   # modelo de datos compartido
+  types/anime.ts  # modelo de anime
+  app/anime/      # seguimiento, detalle y estadísticas de anime
+  app/api/anime*  # rutas de anime y búsqueda (Jikan/AniList)
 ```
 
 ---

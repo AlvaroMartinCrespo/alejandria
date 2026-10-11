@@ -1,6 +1,6 @@
 # Estado del roadmap
 
-Actualizado: 24 de agosto de 2026.
+Actualizado: 11 de octubre de 2026.
 
 ## Fase 0 - Preparación
 
@@ -75,3 +75,12 @@ No es posible ejecutar Next.js en este entorno sin `node_modules`, y se ha respe
 - [x] Modo “Sorpréndeme”.
 - [x] Progreso de lectura.
 - [x] Notas personales.
+
+## Anime (plan `alejandria-anime-plan.md`)
+
+- [x] Pasos 1–11: migración, tipos y validación, capa Supabase, rutas API, búsqueda Jikan/AniList, `AnimeProvider`, componentes, `/anime`, detalle, estadísticas y navegación.
+- [x] Paso 12: bloque `/* ===== ANIME ===== */` en `globals.css` con colores de estado, adaptación a móvil (360/390/680/900 px), objetivos táctiles ≥ 44 px, `safe-area-inset-*`, `prefers-reduced-motion` e impresión.
+- [x] Paso 13: copia de seguridad v3 (`anime` opcional; acepta v1/v2/v3 y copias solo con anime) y exportación PDF con grupos de anime.
+- [x] Paso 14 (revisión estática): todas las mutaciones de `/api/anime*` exigen `hasEditorSession()` (401 si la edición está bloqueada); `/api/books` y `/api/collections` no se han modificado; los cambios en `supabase.ts`, `library-provider.tsx`, `app-shell.tsx`, `next.config.ts`, `health` y `globals.css` son aditivos; sin imports sin usar; `check:deploy` incluye `/anime` y `/anime/estadisticas`; README, DEPLOYMENT y este archivo actualizados.
+- [ ] Paso 14 (pendiente en tu entorno, sin `node_modules` ni red aquí): `npm run lint`, `npm run build` y prueba manual a 360, 390, 768 y 1180 px con la tabla `anime` creada y sin crear.
+- [ ] Ejecutar `supabase/migration-anime.sql` en Supabase antes de desplegar.

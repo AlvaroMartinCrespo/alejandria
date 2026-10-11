@@ -5,7 +5,7 @@ if (!target || !/^https?:\/\//.test(target)) {
   process.exit(1);
 }
 
-const routes = ["/", "/leidos", "/estadisticas", "/exportar"];
+const routes = ["/", "/leidos", "/estadisticas", "/exportar", "/anime", "/anime/estadisticas"];
 let failed = false;
 
 for (const route of routes) {
