@@ -4020,3 +4020,14 @@ textarea::placeholder {
   .anime-title-list li { break-inside: avoid; }
   .anime-title-list a { color: #111; }
 }
+
+/* ---- Botón «Ver todas las estadísticas de anime» (resumen global) ---- */
+.anime-year-summary > .button {
+  margin-top: 28px;
+}
+
+@media (max-width: 680px) {
+  .anime-year-summary > .button {
+    margin-top: 22px;
+  }
+}
