@@ -3968,3 +3968,55 @@ textarea::placeholder {
     font-size: 40px;
   }
 }
+
+/* ---- Índice de animes vistos (estadísticas de anime) ---- */
+.anime-title-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(18,20,20,.7);
+}
+
+.anime-title-list li {
+  min-width: 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.anime-title-list a {
+  display: block;
+  padding: 13px 18px;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: Georgia, serif;
+  font-size: 16px;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color .15s ease, background .15s ease;
+}
+
+.anime-title-list a:hover,
+.anime-title-list a:focus-visible {
+  color: var(--acid);
+  background: var(--raised);
+  outline: none;
+}
+
+@media (max-width: 900px) {
+  .anime-title-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 680px) {
+  .anime-title-list { grid-template-columns: minmax(0, 1fr); }
+  .anime-title-list a { padding: 12px 14px; }
+}
+
+@media print {
+  .anime-title-list { display: block; columns: 2; background: none; }
+  .anime-title-list li { break-inside: avoid; }
+  .anime-title-list a { color: #111; }
+}

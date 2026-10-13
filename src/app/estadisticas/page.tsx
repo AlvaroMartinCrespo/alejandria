@@ -9,7 +9,8 @@ import { useAnime } from "@/components/anime-provider";
 import { useLibrary } from "@/components/library-provider";
 import { animeEpisodesWatched } from "@/lib/anime-utils";
 import { parseAnimeBackup } from "@/lib/anime-validation";
-import type { Book, LibraryBackup } from "@/types/book";
+import { buildLibraryBackup, downloadJson } from "@/lib/backup";
+import type { Book } from "@/types/book";
 
 type Tab = "resumen" | "favoritos" | "valoraciones";
 
@@ -75,26 +76,17 @@ export default function StatisticsPage() {
   const animeYear = new Date().getFullYear();
   const animeThisYear = anime.filter((item) => item.status === "watched" && item.finishedYear === animeYear);
   const animeThisYearEpisodes = animeThisYear.reduce((sum, item) => sum + animeEpisodesWatched(item), 0);
-  const latestAnime = [...animeThisYear]
-    .sort((left, right) => (right.lastWatchedAt ?? right.addedAt).localeCompare(left.lastWatchedAt ?? left.addedAt))
-    .slice(0, 6);
 
   function exportJson() {
-    const backup: LibraryBackup = {
-      format: "alejandria-library-backup",
-      version: 3,
-      exportedAt: new Date().toISOString(),
-      bookCount: books.length,
-      books,
-      collections,
-      anime,
-    };
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `alejandria-${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+    // Si el anime no ha podido cargarse, una copia saldría incompleta sin avisar.
+    if (animeError) {
+      window.alert("No se puede crear la copia: el anime no se ha cargado correctamente. Resuelve el error e inténtalo de nuevo.");
+      return;
+    }
+    downloadJson(
+      buildLibraryBackup({ books, collections, anime }),
+      `alejandria-${new Date().toISOString().slice(0, 10)}.json`,
+    );
   }
 
   async function importJson(file: File | undefined) {
@@ -183,9 +175,6 @@ export default function StatisticsPage() {
                 <article><span>Animes vistos</span><strong>{animeThisYear.length}</strong><small>{animeYear}</small></article>
                 <article><span>Capítulos</span><strong>{animeThisYearEpisodes.toLocaleString("es")}</strong><small>aproximadamente</small></article>
               </div>
-              {latestAnime.length > 0
-                ? <ul className="anime-latest-list">{latestAnime.map((item) => <li key={item.$id}><Link href={`/anime/${item.$id}`}>{item.title}</Link></li>)}</ul>
-                : <div className="big-empty compact"><p>Todavía no has terminado ningún anime este año.</p></div>}
               <Link className="button secondary" href="/anime/estadisticas">Ver todas las estadísticas de anime →</Link>
             </section>
           )}

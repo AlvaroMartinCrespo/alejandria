@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { AnimeGenresChart, AnimeRatingChart, AnimeStatusChart, AnimeYearsChart } from "@/components/anime-charts";
 import { AnimeRow } from "@/components/anime-row";
 import { AnimeTabs } from "@/components/anime-tabs";
@@ -90,6 +91,9 @@ export default function AnimeStatisticsPage() {
   const yearList = watched.filter((item) => item.finishedYear === selectedYear).sort(sortByFinishedDesc);
   const yearEpisodes = yearList.reduce((sum, item) => sum + animeEpisodesWatched(item), 0);
 
+  // Todos los animes vistos, por orden alfabético, solo títulos.
+  const watchedTitles = [...watched].sort((left, right) => left.title.localeCompare(right.title, "es", { sensitivity: "base" }));
+
   const favorites = anime.filter((item) => item.favorite).sort(sortByFinishedDesc);
 
   function animeForRating(rating: number) {
@@ -157,6 +161,21 @@ export default function AnimeStatisticsPage() {
             {genreData.length
               ? <AnimeGenresChart data={genreData} />
               : <div className="big-empty compact"><p>Los géneros aparecerán cuando termines animes que los tengan.</p></div>}
+          </section>
+          <section className="year-chart anime-title-index">
+            <div className="section-title">
+              <div><p className="eyebrow">Colección</p><h2>Animes vistos</h2></div>
+              <span className="section-count">{plural(watchedTitles.length, "anime", "animes")}</span>
+            </div>
+            {watchedTitles.length
+              ? (
+                <ul className="anime-title-list">
+                  {watchedTitles.map((item) => (
+                    <li key={item.$id}><Link href={`/anime/${item.$id}`}>{item.title}</Link></li>
+                  ))}
+                </ul>
+              )
+              : <div className="big-empty compact"><p>Los títulos aparecerán cuando termines tus primeros animes.</p></div>}
           </section>
         </>
       )}

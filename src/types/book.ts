@@ -38,6 +38,9 @@ export interface LibraryBackup {
   version: 1 | 2 | 3;
   exportedAt: string;
   bookCount: number;
+  /** Solo en copias v3 recientes; informativos, la restauración no depende de ellos. */
+  collectionCount?: number;
+  animeCount?: number;
   books: Book[];
   collections?: Collection[];
   /** Solo en copias v3. Las copias v1/v2 no lo traen. */
