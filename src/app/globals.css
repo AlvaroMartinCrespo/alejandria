@@ -646,7 +646,7 @@ summary:focus-visible {
   animation: reveal .5s .16s ease-out both;
 }
 
-.library-section:has(.status-control[open], .move-control[open]) {
+.library-section:has(.status-control[open], .move-control[open], .collection-menu[open]) {
   position: relative;
   z-index: 20;
 }
@@ -747,6 +747,11 @@ summary:focus-visible {
 
 .collection-section {
   border-top: 1px solid var(--line);
+}
+
+.collection-section:has(.collection-menu[open], .status-control[open], .move-control[open]) {
+  position: relative;
+  z-index: 10;
 }
 
 .collection-section > summary {
@@ -2616,7 +2621,7 @@ textarea::placeholder {
     font-size: 10px;
   }
 
-  .library-section:has(.status-control[open], .move-control[open]),
+  .library-section:has(.status-control[open], .move-control[open], .collection-menu[open]),
   .year-group:has(.status-control[open], .move-control[open]) {
     position: relative;
     z-index: 40;
