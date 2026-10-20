@@ -1,3 +1,4 @@
+import { MAX_RATING } from "@/lib/rating";
 import type { Anime, AnimeStatus } from "@/types/anime";
 
 const STATUSES = new Set<AnimeStatus>(["watching", "to_watch", "on_hold", "watched", "dropped"]);
@@ -77,7 +78,7 @@ export function parseAnimeInput(value: unknown): AnimeInput {
     synopsis: text(input.synopsis, 20000),
     status: status(input.status),
     favorite: input.favorite === undefined ? false : boolean(input.favorite),
-    rating: optionalInteger(input.rating, 0, 5),
+    rating: optionalInteger(input.rating, 0, MAX_RATING),
     currentSeason: requiredInteger(input.currentSeason, 1, 100, 1),
     currentEpisode: requiredInteger(input.currentEpisode, 0, 100000, 0),
     totalEpisodes: optionalInteger(input.totalEpisodes, 0, 100000),
@@ -109,7 +110,7 @@ export function parseAnimeChanges(value: unknown): AnimeChanges {
   if ("synopsis" in input) changes.synopsis = text(input.synopsis, 20000);
   if ("status" in input) changes.status = status(input.status);
   if ("favorite" in input) changes.favorite = boolean(input.favorite);
-  if ("rating" in input) changes.rating = optionalInteger(input.rating, 0, 5);
+  if ("rating" in input) changes.rating = optionalInteger(input.rating, 0, MAX_RATING);
   if ("currentSeason" in input) changes.currentSeason = requiredInteger(input.currentSeason, 1, 100, 1);
   if ("currentEpisode" in input) changes.currentEpisode = requiredInteger(input.currentEpisode, 0, 100000, 0);
   if ("totalEpisodes" in input) changes.totalEpisodes = optionalInteger(input.totalEpisodes, 0, 100000);
@@ -156,7 +157,7 @@ function backupAnime(value: unknown): Anime {
     synopsis: text(input.synopsis, 20000),
     status: rawStatus as AnimeStatus,
     favorite: input.favorite === true,
-    rating: optionalInteger(input.rating, 0, 5),
+    rating: optionalInteger(input.rating, 0, MAX_RATING),
     currentSeason: requiredInteger(input.currentSeason ?? input.current_season, 1, 100, 1),
     currentEpisode: requiredInteger(input.currentEpisode ?? input.current_episode, 0, 100000, 0),
     totalEpisodes: optionalInteger(input.totalEpisodes ?? input.total_episodes, 0, 100000),

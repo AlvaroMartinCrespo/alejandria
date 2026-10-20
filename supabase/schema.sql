@@ -12,7 +12,7 @@ create table if not exists public.books (
   status text not null default 'to_read' check (status in ('to_read', 'reading', 'read')),
   favorite boolean not null default false,
   sort_order bigint check (sort_order >= 0),
-  rating smallint check (rating between 0 and 5),
+  rating smallint check (rating between 0 and 10),
   finished_year integer check (finished_year between 1900 and 2100),
   added_at timestamptz not null default now(),
   progress smallint not null default 0 check (progress between 0 and 100),
@@ -100,7 +100,7 @@ create table if not exists public.anime (
   status text not null default 'to_watch'
     check (status in ('to_watch','watching','on_hold','watched','dropped')),
   favorite boolean not null default false,
-  rating smallint check (rating between 0 and 5),
+  rating smallint check (rating between 0 and 10),
   current_season integer not null default 1 check (current_season between 1 and 100),
   current_episode integer not null default 0 check (current_episode between 0 and 100000),
   total_episodes integer check (total_episodes between 0 and 100000),

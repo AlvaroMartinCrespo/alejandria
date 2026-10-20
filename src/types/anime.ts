@@ -17,7 +17,7 @@ export interface Anime {
   synopsis: string;
   status: AnimeStatus;
   favorite: boolean;
-  rating: number | null; // 0-5
+  rating: number | null; // 0-10
   currentSeason: number; // >= 1
   currentEpisode: number; // >= 0, dentro de la temporada actual
   totalEpisodes: number | null; // capítulos de la temporada actual

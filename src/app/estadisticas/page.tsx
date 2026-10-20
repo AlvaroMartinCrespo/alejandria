@@ -10,6 +10,7 @@ import { useLibrary } from "@/components/library-provider";
 import { animeEpisodesWatched } from "@/lib/anime-utils";
 import { parseAnimeBackup } from "@/lib/anime-validation";
 import { buildLibraryBackup, downloadJson } from "@/lib/backup";
+import { MAX_RATING, RATING_VALUES_DESC } from "@/lib/rating";
 import type { Book } from "@/types/book";
 
 type Tab = "resumen" | "favoritos" | "valoraciones";
@@ -41,16 +42,14 @@ export default function StatisticsPage() {
   const topAuthor = Object.entries(authorCounts).sort((a, b) => b[1] - a[1])[0];
   const years = Array.from(new Set(completed.map((book) => book.finishedYear).filter(Boolean) as number[])).sort((a, b) => a - b);
   const statusCounts = {
-    reading: books.filter((book) => book.status === "reading").length,
     toRead: books.filter((book) => book.status === "to_read").length,
     read: completed.length,
   };
-  const ratingCounts = [5, 4, 3, 2, 1].map((rating) => ({
+  const ratingCounts = RATING_VALUES_DESC.map((rating) => ({
     rating,
     count: completed.filter((book) => book.rating === rating).length,
   }));
   const statusData = [
-    { name: "Leyendo", value: statusCounts.reading, color: "#b8f34a" },
     { name: "Quiero leer", value: statusCounts.toRead, color: "#e9bb58" },
     { name: "Leídos", value: statusCounts.read, color: "#ff735d" },
   ];
@@ -67,7 +66,7 @@ export default function StatisticsPage() {
     return favorites.filter((book) => book.finishedYear === year);
   }
 
-  // Valoraciones: libros leídos agrupados por puntuación, de 5 a 1 estrellas.
+  // Valoraciones: libros leídos agrupados por puntuación, de 10 a 1 estrellas.
   function booksForRating(rating: number) {
     return completed.filter((book) => book.rating === rating).sort(sortByFinishedDesc);
   }
@@ -138,7 +137,7 @@ export default function StatisticsPage() {
           <section className="stat-grid">
             <article><span>Libros terminados</span><strong>{completed.length}</strong><small>en total</small></article>
             <article><span>Páginas leídas</span><strong>{pages.toLocaleString("es")}</strong><small>aproximadamente</small></article>
-            <article><span>Puntuación media</span><strong>{average ? average.toFixed(1) : "—"}</strong><small>sobre 5</small></article>
+            <article><span>Puntuación media</span><strong>{average ? average.toFixed(1) : "—"}</strong><small>sobre 10</small></article>
             <article><span>Autor más leído</span><strong className="author-stat">{topAuthor?.[0] ?? "—"}</strong><small>{topAuthor ? `${topAuthor[1]} libros` : "sin datos"}</small></article>
           </section>
           <section className="stats-insights">
@@ -149,7 +148,6 @@ export default function StatisticsPage() {
               </div>
               <LibraryStatusChart data={statusData} />
               <div className="status-legend">
-                <span className="reading"><i />Leyendo<strong>{statusCounts.reading}</strong></span>
                 <span className="to-read"><i />Quiero leer<strong>{statusCounts.toRead}</strong></span>
                 <span className="read"><i />Leídos<strong>{statusCounts.read}</strong></span>
               </div>
@@ -217,12 +215,12 @@ export default function StatisticsPage() {
 
       {tab === "valoraciones" && (
         <section className="rating-groups">
-          {[5, 4, 3, 2, 1].map((rating) => {
+          {RATING_VALUES_DESC.map((rating) => {
             const list = booksForRating(rating);
             return (
               <section className="rating-group" key={rating}>
-                <div className="rating-marker" aria-label={`${rating} de 5 estrellas`}>
-                  <strong aria-hidden="true">{"★".repeat(rating)}<span className="dim">{"★".repeat(5 - rating)}</span></strong>
+                <div className="rating-marker" aria-label={`${rating} de ${MAX_RATING} estrellas`}>
+                  <strong aria-hidden="true">★ {rating}<em>/ {MAX_RATING}</em></strong>
                   <span>{list.length} libro{list.length === 1 ? "" : "s"}</span>
                 </div>
                 {list.length

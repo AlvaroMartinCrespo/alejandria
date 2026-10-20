@@ -80,3 +80,7 @@ El comando comprueba inicio, leídos, estadísticas, exportación y `/api/health
 5. Exporta JSON y PDF.
 6. Restaura el JSON y confirma que no crea duplicados.
 7. Abre `/anime`, desbloquea la edición y prueba un alta (búsqueda y manual), escribir temporada y capítulo, reordenar y cambiar estados.
+
+## Puntuación 0-10
+
+Si la base de datos viene de la versión con puntuación sobre 5, pega `supabase/migration-rating-10.sql` en **Supabase → SQL Editor → Run** antes de desplegar. Amplía el límite a 10 y duplica las valoraciones existentes; es idempotente (no las duplica dos veces). Las copias JSON antiguas (escala 1-5) se restauran tal cual, sin duplicar.

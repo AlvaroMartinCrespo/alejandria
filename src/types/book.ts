@@ -20,7 +20,7 @@ export interface Book {
   favorite: boolean;
   order: number | null; // posición manual, solo relevante en status "to_read"
   collectionId: string | null;
-  rating: number | null; // 0-5
+  rating: number | null; // 0-10
   finishedYear: number | null; // año en que se terminó de leer
   addedAt: string; // ISO date
   progress: number; // porcentaje leído, de 0 a 100

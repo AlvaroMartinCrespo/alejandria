@@ -17,7 +17,7 @@ create table if not exists public.anime (
   status text not null default 'to_watch'
     check (status in ('to_watch','watching','on_hold','watched','dropped')),
   favorite boolean not null default false,
-  rating smallint check (rating between 0 and 5),
+  rating smallint check (rating between 0 and 10),
   current_season integer not null default 1 check (current_season between 1 and 100),
   current_episode integer not null default 0 check (current_episode between 0 and 100000),
   total_episodes integer check (total_episodes between 0 and 100000),

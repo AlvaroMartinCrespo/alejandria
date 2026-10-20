@@ -62,7 +62,8 @@ Abre [http://localhost:3000](http://localhost:3000).
 1. Crea un proyecto en [Supabase](https://supabase.com/dashboard).
 2. Ejecuta `supabase/schema.sql` desde el SQL Editor.
 3. Configura `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`.
-4. Para la sección de Anime en una instalación ya existente, ejecuta además `supabase/migration-anime.sql` (aditiva e idempotente) **antes** de desplegar. Los libros siguen funcionando aunque no exista la tabla `anime`; `/anime` mostrará un aviso de migración.
+4. Si vienes de una versión con puntuación sobre 5, ejecuta también `supabase/migration-rating-10.sql` (una vez, antes de desplegar): cambia el límite a 0-10 y duplica las valoraciones existentes. Es idempotente. Una instalación nueva con `schema.sql` ya sale en 0-10.
+5. Para la sección de Anime en una instalación ya existente, ejecuta además `supabase/migration-anime.sql` (aditiva e idempotente) **antes** de desplegar. Los libros siguen funcionando aunque no exista la tabla `anime`; `/anime` mostrará un aviso de migración.
 
 ### Configuración de Google Books API
 

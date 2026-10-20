@@ -10,6 +10,7 @@ import { JapaneseHeading } from "@/components/japanese-heading";
 import { useLibrary } from "@/components/library-provider";
 import { LibrarySkeleton } from "@/components/library-skeleton";
 import { ANIME_STATUS_COLORS, ANIME_STATUS_LABELS, animeEpisodesWatched } from "@/lib/anime-utils";
+import { MAX_RATING, RATING_VALUES_DESC } from "@/lib/rating";
 import type { Anime, AnimeStatus } from "@/types/anime";
 
 type Tab = "resumen" | "este-ano" | "favoritos" | "valoraciones";
@@ -76,7 +77,7 @@ export default function AnimeStatisticsPage() {
     value: statusCounts[status],
     color: ANIME_STATUS_COLORS[status],
   }));
-  const ratingCounts = [5, 4, 3, 2, 1].map((rating) => ({
+  const ratingCounts = RATING_VALUES_DESC.map((rating) => ({
     rating,
     count: watched.filter((item) => item.rating === rating).length,
   }));
@@ -126,7 +127,7 @@ export default function AnimeStatisticsPage() {
             <article><span>Animes vistos</span><strong>{watched.length}</strong><small>en total</small></article>
             <article><span>Vistos este año</span><strong>{watchedThisYear.length}</strong><small>{currentYear}</small></article>
             <article><span>Capítulos vistos</span><strong>{episodes.toLocaleString("es")}</strong><small>aproximadamente</small></article>
-            <article><span>Puntuación media</span><strong>{average ? average.toFixed(1) : "—"}</strong><small>sobre 5</small></article>
+            <article><span>Puntuación media</span><strong>{average ? average.toFixed(1) : "—"}</strong><small>sobre 10</small></article>
             <article><span>Género más visto</span><strong className="author-stat">{topGenre?.[0] ?? "—"}</strong><small>{topGenre ? plural(topGenre[1], "anime", "animes") : "sin datos"}</small></article>
           </section>
           <section className="stats-insights">
@@ -214,12 +215,12 @@ export default function AnimeStatisticsPage() {
 
       {tab === "valoraciones" && (
         <section className="rating-groups">
-          {[5, 4, 3, 2, 1].map((rating) => {
+          {RATING_VALUES_DESC.map((rating) => {
             const list = animeForRating(rating);
             return (
               <section className="rating-group" key={rating}>
-                <div className="rating-marker" aria-label={`${rating} de 5 estrellas`}>
-                  <strong aria-hidden="true">{"★".repeat(rating)}<span className="dim">{"★".repeat(5 - rating)}</span></strong>
+                <div className="rating-marker" aria-label={`${rating} de ${MAX_RATING} estrellas`}>
+                  <strong aria-hidden="true">★ {rating}<em>/ {MAX_RATING}</em></strong>
                   <span>{plural(list.length, "anime", "animes")}</span>
                 </div>
                 {list.length

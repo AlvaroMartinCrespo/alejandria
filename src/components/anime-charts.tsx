@@ -90,7 +90,8 @@ export function AnimeRatingChart({ data }: { data: Array<{ rating: number; count
             dataKey="rating"
             tickLine={false}
             axisLine={false}
-            width={45}
+            width={52}
+            interval={0}
             tick={{ fill: "#e9bb58", fontSize: 11, fontWeight: 700 }}
             tickFormatter={(value) => `${value} ★`}
           />

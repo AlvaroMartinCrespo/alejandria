@@ -17,6 +17,8 @@ export default function ReadBooksPage() {
     .filter((book) => `${book.title} ${book.authors.join(" ")}`.toLocaleLowerCase("es").includes(deferredQuery));
   const years = Array.from(new Set(filtered.map((book) => book.finishedYear ?? new Date().getFullYear())))
     .sort((a, b) => b - a);
+  // Con una búsqueda activa se abren los años para que se vean las coincidencias.
+  const searching = deferredQuery.trim().length > 0;
 
   function booksForYear(year: number) {
     return filtered
@@ -40,12 +42,26 @@ export default function ReadBooksPage() {
       </div>
       {loading ? <LibrarySkeleton rows={4} /> : years.length ? (
         <div className="year-groups">
-          {years.map((year) => (
-            <section className="year-group" key={year}>
-              <div className="year-marker"><strong>{year}</strong><span>{booksForYear(year).length} libros</span></div>
-              <div>{booksForYear(year).map((book) => <BookRow key={book.$id} book={book} />)}</div>
-            </section>
-          ))}
+          {years.map((year) => {
+            const list = booksForYear(year);
+            const favorites = list.filter((book) => book.favorite).length;
+            return (
+              <details className="year-fold" key={year} open={searching}>
+                <summary>
+                  <strong>{year}</strong>
+                  <span className="year-count">{list.length} libro{list.length === 1 ? "" : "s"}</span>
+                  <span className="year-chevron" aria-hidden="true">⌄</span>
+                </summary>
+                <div className="year-fold-body">
+                  <div>{list.map((book) => <BookRow key={book.$id} book={book} />)}</div>
+                  <div className="year-fold-totals">
+                    <span>Total leídos<strong>{list.length}</strong></span>
+                    <span className="fav">Favoritos<strong>{favorites}</strong></span>
+                  </div>
+                </div>
+              </details>
+            );
+          })}
         </div>
       ) : <div className="big-empty"><strong>Aún no hay libros en este archivo.</strong><p>Marca una lectura como “Leído” y aparecerá agrupada por año.</p></div>}
     </>

@@ -6,6 +6,7 @@ import { BookCover } from "@/components/book-cover";
 import { useLibrary } from "@/components/library-provider";
 import { LibrarySkeleton } from "@/components/library-skeleton";
 import { STATUS_LABELS } from "@/lib/book-utils";
+import { RATING_VALUES } from "@/lib/rating";
 import type { BookStatus } from "@/types/book";
 
 export default function BookDetailPage() {
@@ -84,7 +85,7 @@ export default function BookDetailPage() {
             onChange={(event) => void save({ pageCount: event.target.value ? Number(event.target.value) : null })}
           />
         </label>
-        <div className="rating-fact"><span>Tu puntuación</span><div>{[1, 2, 3, 4, 5].map((rating) => <button key={rating} disabled={!editing} className={(book.rating ?? 0) >= rating ? "selected" : ""} onClick={() => void save({ rating })} aria-label={`${rating} estrellas`}>★</button>)}</div></div>
+        <div className="rating-fact"><span>Tu puntuación</span><div>{RATING_VALUES.map((rating) => <button key={rating} disabled={!editing} className={(book.rating ?? 0) >= rating ? "selected" : ""} onClick={() => void save({ rating })} aria-label={`${rating} estrellas`}>★</button>)}</div></div>
         {book.status === "read" && <label><span>Terminado en</span><input disabled={!editing} type="number" min="1900" max="2100" value={book.finishedYear ?? new Date().getFullYear()} onChange={(event) => void save({ finishedYear: Number(event.target.value) })} /></label>}
       </section>
 

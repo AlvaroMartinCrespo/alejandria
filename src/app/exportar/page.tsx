@@ -73,7 +73,7 @@ export default function PrintableLibraryPage() {
                   <strong>{book.title}</strong>
                   <span>{book.authors.join(", ") || "Autor desconocido"}</span>
                   <span>{book.finishedYear ?? book.publishedYear ?? "—"}</span>
-                  <span>{book.rating === null ? "Sin puntuar" : `${book.rating} / 5`}</span>
+                  <span>{book.rating === null ? "Sin puntuar" : `${book.rating} / 10`}</span>
                 </div>
               ))}
             </div>
@@ -95,7 +95,7 @@ export default function PrintableLibraryPage() {
                       ? item.finishedYear ?? item.releaseYear ?? "—"
                       : `Temp. ${item.currentSeason} · Cap. ${item.currentEpisode}${item.totalEpisodes !== null ? ` / ${item.totalEpisodes}` : ""}`}
                   </span>
-                  <span>{item.rating === null ? "Sin puntuar" : `${item.rating} / 5`}</span>
+                  <span>{item.rating === null ? "Sin puntuar" : `${item.rating} / 10`}</span>
                 </div>
               ))}
             </div>

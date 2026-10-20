@@ -7,6 +7,7 @@ import { useAnime } from "@/components/anime-provider";
 import { useLibrary } from "@/components/library-provider";
 import { LibrarySkeleton } from "@/components/library-skeleton";
 import { ANIME_STATUS_LABELS } from "@/lib/anime-utils";
+import { RATING_VALUES } from "@/lib/rating";
 import type { AnimeStatus } from "@/types/anime";
 
 /** Campo de texto: se guarda al salir del campo o con Enter, no en cada tecla. */
@@ -228,7 +229,7 @@ export default function AnimeDetailPage() {
         <div className="rating-fact">
           <span>Tu puntuación</span>
           <div>
-            {[1, 2, 3, 4, 5].map((rating) => (
+            {RATING_VALUES.map((rating) => (
               <button key={rating} disabled={!editing} className={(current.rating ?? 0) >= rating ? "selected" : ""} onClick={() => void save({ rating })} aria-label={`${rating} estrellas`}>★</button>
             ))}
             {current.rating !== null && (

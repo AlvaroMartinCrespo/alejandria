@@ -1,3 +1,4 @@
+import { MAX_RATING } from "@/lib/rating";
 import type { Book, BookStatus, Collection, GoogleBookResult } from "@/types/book";
 
 const STATUSES = new Set<BookStatus>(["to_read", "reading", "read"]);
@@ -93,7 +94,7 @@ export function parseBookChanges(value: unknown): Partial<Omit<Book, "$id" | "go
   if ("favorite" in input) changes.favorite = boolean(input.favorite);
   if ("order" in input) changes.order = optionalInteger(input.order);
   if ("collectionId" in input) changes.collectionId = optionalCollectionId(input.collectionId);
-  if ("rating" in input) changes.rating = optionalInteger(input.rating, 0, 5);
+  if ("rating" in input) changes.rating = optionalInteger(input.rating, 0, MAX_RATING);
   if ("finishedYear" in input) changes.finishedYear = optionalInteger(input.finishedYear, 1900, 2100);
   if ("progress" in input) changes.progress = optionalInteger(input.progress, 0, 100) ?? 0;
   if ("notes" in input) changes.notes = text(input.notes, 50000);
@@ -140,7 +141,7 @@ function backupBook(value: unknown): Book {
     favorite: input.status === "favorite" || input.favorite === true,
     order: optionalInteger(input.order ?? input.sort_order),
     collectionId: optionalCollectionId(input.collectionId ?? input.collection_id),
-    rating: optionalInteger(input.rating, 0, 5),
+    rating: optionalInteger(input.rating, 0, MAX_RATING),
     finishedYear: optionalInteger(input.finishedYear ?? input.finished_year, 1900, 2100),
     addedAt,
     progress: optionalInteger(input.progress, 0, 100) ?? legacyProgress,
