@@ -67,7 +67,7 @@ export default function ReadBooksPage() {
                   count={`${list.length} libro${list.length === 1 ? "" : "s"}`}
                   forceOpen={searching}
                 >
-                  {list.map((book) => <BookRow key={book.$id} book={book} />)}
+                  {list.map((book) => <BookRow key={book.$id} book={book} hideStatus />)}
                 </YearFold>
               );
             })}

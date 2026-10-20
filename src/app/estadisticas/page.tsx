@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Download, FileText, Upload } from "lucide-react";
 import { LibraryStatusChart, RatingChart, ReadingYearsChart } from "@/components/library-charts";
 import { BookRow } from "@/components/book-row";
@@ -50,9 +51,15 @@ function sortByFinishedDesc(a: Book, b: Book) {
 }
 
 export default function StatisticsPage() {
+  // useSearchParams requiere Suspense en páginas estáticas.
+  return <Suspense fallback={null}><Statistics /></Suspense>;
+}
+
+function Statistics() {
   const { books, collections, editing, restoreBackup } = useLibrary();
   const { anime, animeError, restoreAnime } = useAnime();
-  const [tab, setTab] = useState<Tab>("resumen");
+  const initialTab = useSearchParams().get("tab");
+  const [tab, setTab] = useState<Tab>(TABS.some((item) => item.id === initialTab) ? (initialTab as Tab) : "resumen");
 
   const completed = books.filter((book) => book.status === "read");
   const pages = completed.reduce((sum, book) => sum + (book.pageCount ?? 0), 0);

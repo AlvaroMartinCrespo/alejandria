@@ -13,12 +13,14 @@ export function BookRow({
   book,
   sortable = false,
   overlay = false,
+  hideStatus = false,
   onMoveUp,
   onMoveDown,
 }: {
   book: Book;
   sortable?: boolean;
   overlay?: boolean;
+  hideStatus?: boolean;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
 }) {
@@ -66,7 +68,7 @@ export function BookRow({
       >
         <span aria-hidden="true">{book.favorite ? "★" : "☆"}</span>
       </button>
-      {editing ? <details className={`status-control ${book.status}`}>
+      {hideStatus ? null : editing ? <details className={`status-control ${book.status}`}>
         <summary aria-label={`Cambiar estado de ${book.title}`}>
           <i className="status-dot" aria-hidden="true" />
           <span>{STATUS_LABELS[book.status]}</span>

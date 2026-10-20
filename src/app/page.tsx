@@ -36,7 +36,6 @@ export default function Home() {
   const toRead = books
     .filter((book) => book.status === "to_read")
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  const favorites = books.filter((book) => book.favorite);
   const read = books.filter((book) => book.status === "read");
   // Últimos 10 libros añadidos (solo para recordar cuáles fueron), del más nuevo al más antiguo.
   // Al añadir uno nuevo, el más antiguo sale de esta lista (el libro sigue en la biblioteca).
@@ -220,16 +219,6 @@ export default function Home() {
 
         <details className="library-section">
           <summary>
-            <span><strong>Favoritos</strong><small>{favorites.length} imprescindibles</small></span>
-            <i aria-hidden="true">⌄</i>
-          </summary>
-          <div className="section-body">
-            {favorites.length ? favorites.map((book) => <BookRow key={book.$id} book={book} />) : <EmptyList text="Marca como favorito ese libro al que siempre volverías." />}
-          </div>
-        </details>
-
-        <details className="library-section">
-          <summary>
             <span><strong>Últimos libros añadidos</strong><small>{recentlyAdded.length} más recientes</small></span>
             <i aria-hidden="true">⌄</i>
           </summary>
@@ -249,6 +238,11 @@ export default function Home() {
               : <EmptyList text="Aquí verás los últimos libros que añadas." />}
           </div>
         </details>
+
+        <Link href="/estadisticas?tab=favoritos" className="favorites-link">
+          <span>Ver tus favoritos por año</span>
+          <i aria-hidden="true">→</i>
+        </Link>
 
         <Link href="/leidos" className="read-archive-link">
           <div><span className="eyebrow">Archivo</span><strong>Leídos</strong><p>Tu historia lectora, ordenada por año.</p></div>

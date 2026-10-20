@@ -1240,6 +1240,32 @@ summary:focus-visible {
   font-size: 13px;
 }
 
+.favorites-link {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 24px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  transition: border-color .2s, background .2s, color .2s;
+}
+
+.favorites-link:hover {
+  border-color: #515652;
+  background: var(--raised);
+  color: var(--ink);
+}
+
+.favorites-link > i {
+  color: var(--acid);
+  font-style: normal;
+}
+
 .read-archive-link {
   min-height: 142px;
   display: grid;
@@ -1744,7 +1770,7 @@ textarea::placeholder {
 }
 
 .year-fold .book-row {
-  grid-template-columns: 64px minmax(0, 1fr) auto auto;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
 }
 
 .year-fold .book-row.favorite-card {
