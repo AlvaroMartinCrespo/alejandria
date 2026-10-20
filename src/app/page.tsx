@@ -38,6 +38,11 @@ export default function Home() {
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   const favorites = books.filter((book) => book.favorite);
   const read = books.filter((book) => book.status === "read");
+  // Últimos 10 libros añadidos (solo para recordar cuáles fueron), del más nuevo al más antiguo.
+  // Al añadir uno nuevo, el más antiguo sale de esta lista (el libro sigue en la biblioteca).
+  const recentlyAdded = [...books]
+    .sort((a, b) => (new Date(b.addedAt).getTime() || 0) - (new Date(a.addedAt).getTime() || 0))
+    .slice(0, 10);
   const surprise = toRead.find((book) => book.$id === surpriseId);
   const quote = getDailyQuote();
   const sensors = useSensors(
@@ -220,6 +225,28 @@ export default function Home() {
           </summary>
           <div className="section-body">
             {favorites.length ? favorites.map((book) => <BookRow key={book.$id} book={book} />) : <EmptyList text="Marca como favorito ese libro al que siempre volverías." />}
+          </div>
+        </details>
+
+        <details className="library-section">
+          <summary>
+            <span><strong>Últimos libros añadidos</strong><small>{recentlyAdded.length} más recientes</small></span>
+            <i aria-hidden="true">⌄</i>
+          </summary>
+          <div className="section-body">
+            {recentlyAdded.length
+              ? <ol className="recent-list">
+                  {recentlyAdded.map((book) => (
+                    <li key={book.$id}>
+                      <BookCover title={book.title} url={book.coverUrl} />
+                      <div className="recent-copy">
+                        <strong>{book.title}</strong>
+                        <span>{book.authors.join(", ") || "Autor desconocido"}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              : <EmptyList text="Aquí verás los últimos libros que añadas." />}
           </div>
         </details>
 

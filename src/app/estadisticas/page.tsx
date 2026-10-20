@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Download, FileText, Upload } from "lucide-react";
 import { LibraryStatusChart, RatingChart, ReadingYearsChart } from "@/components/library-charts";
 import { BookRow } from "@/components/book-row";
+import { BookCover } from "@/components/book-cover";
+import { YearFold } from "@/components/year-fold";
 import { useAnime } from "@/components/anime-provider";
 import { useLibrary } from "@/components/library-provider";
 import { animeEpisodesWatched } from "@/lib/anime-utils";
@@ -20,6 +22,27 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "favoritos", label: "Favoritos" },
   { id: "valoraciones", label: "Valoraciones" },
 ];
+
+const FAVORITES_FOLD_KEY = "alejandria-open-favorite-years-v1";
+
+/** Tarjeta simplificada de solo lectura: título, autor, valoración y páginas. */
+function FavoriteCard({ book }: { book: Book }) {
+  return (
+    <article className="book-row favorite-card">
+      <Link href={`/libro/${book.$id}`} className="row-cover" aria-label={`Abrir ${book.title}`}>
+        <BookCover title={book.title} url={book.coverUrl} />
+      </Link>
+      <div className="book-row-copy">
+        <Link href={`/libro/${book.$id}`} className="book-title-link">{book.title}</Link>
+        <p>{book.authors.join(", ") || "Autor desconocido"}</p>
+        <div className="book-meta-inline">
+          {book.rating !== null && <span className="rating" aria-label={`${book.rating} de ${MAX_RATING} estrellas`}>★ {book.rating}/{MAX_RATING}</span>}
+          {book.pageCount && <span>{book.pageCount} págs.</span>}
+        </div>
+      </div>
+    </article>
+  );
+}
 
 function sortByFinishedDesc(a: Book, b: Book) {
   if ((b.finishedYear ?? 0) !== (a.finishedYear ?? 0)) return (b.finishedYear ?? 0) - (a.finishedYear ?? 0);
@@ -180,37 +203,26 @@ export default function StatisticsPage() {
       )}
 
       {tab === "favoritos" && (
-        <>
-          <section className="favorites-panel">
-            <div className="section-title">
-              <div><p className="eyebrow">Tu selección</p><h2>Los imprescindibles</h2></div>
-              <span className="section-count">{favorites.length} libro{favorites.length === 1 ? "" : "s"}</span>
+        <section className="favorites-panel">
+          <div className="section-title"><div><p className="eyebrow">Año a año</p><h2>Favoritos por año</h2></div></div>
+          {favoriteYears.length ? (
+            <div className="year-groups">
+              {favoriteYears.map((year) => {
+                const list = favoritesForYear(year);
+                return (
+                  <YearFold key={year} storageKey={FAVORITES_FOLD_KEY} id={String(year)} title={String(year)} count={`${list.length} favorito${list.length === 1 ? "" : "s"}`}>
+                    {list.map((book) => <FavoriteCard key={book.$id} book={book} />)}
+                  </YearFold>
+                );
+              })}
+              {favoritesWithoutYear.length > 0 && (
+                <YearFold storageKey={FAVORITES_FOLD_KEY} id="sin-anio" title="—" count={`Sin año · ${favoritesWithoutYear.length}`}>
+                  {favoritesWithoutYear.map((book) => <FavoriteCard key={book.$id} book={book} />)}
+                </YearFold>
+              )}
             </div>
-            {favorites.length
-              ? <div className="plain-book-list">{favorites.map((book) => <BookRow key={book.$id} book={book} />)}</div>
-              : <div className="big-empty compact"><p>Marca un libro leído con ★ y aparecerá aquí como imprescindible.</p></div>}
-          </section>
-
-          <section className="favorites-panel stats-subsection">
-            <div className="section-title"><div><p className="eyebrow">Año a año</p><h2>Favoritos por año</h2></div></div>
-            {favoriteYears.length ? (
-              <div className="year-groups">
-                {favoriteYears.map((year) => (
-                  <section className="year-group" key={year}>
-                    <div className="year-marker"><strong>{year}</strong><span>{favoritesForYear(year).length} favorito{favoritesForYear(year).length === 1 ? "" : "s"}</span></div>
-                    <div>{favoritesForYear(year).map((book) => <BookRow key={book.$id} book={book} />)}</div>
-                  </section>
-                ))}
-                {favoritesWithoutYear.length > 0 && (
-                  <section className="year-group">
-                    <div className="year-marker"><strong>—</strong><span>Sin año registrado</span></div>
-                    <div>{favoritesWithoutYear.map((book) => <BookRow key={book.$id} book={book} />)}</div>
-                  </section>
-                )}
-              </div>
-            ) : <div className="big-empty compact"><p>Cuando tus favoritos tengan año de lectura, se agruparán aquí.</p></div>}
-          </section>
-        </>
+          ) : <div className="big-empty compact"><p>Cuando tus favoritos tengan año de lectura, se agruparán aquí.</p></div>}
+        </section>
       )}
 
       {tab === "valoraciones" && (

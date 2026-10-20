@@ -695,6 +695,51 @@ summary:focus-visible {
   transition: transform .25s;
 }
 
+.recent-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recent-list li {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 25px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.recent-list li:first-child {
+  border-top: 0;
+}
+
+.recent-list .book-cover {
+  flex: none;
+}
+
+.recent-copy {
+  min-width: 0;
+}
+
+.recent-copy strong,
+.recent-copy span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.recent-copy strong {
+  font-family: Georgia, serif;
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.recent-copy span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .to-read-section {
   overflow: visible;
 }
@@ -1629,20 +1674,34 @@ textarea::placeholder {
   grid-template-columns: 64px minmax(0, 1fr) auto auto;
 }
 
-/* Años desplegables (página Leídos) */
+/* Años desplegables (Leídos y Favoritos): recuadro como el de las carpetas de inicio */
+.year-groups:has(> .year-fold) {
+  gap: 12px;
+}
+
 .year-fold {
   display: block;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.year-fold[open] {
+  border-color: #3a4a2c;
 }
 
 .year-fold > summary {
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 22px;
   list-style: none;
   cursor: pointer;
-  display: grid;
-  grid-template-columns: 130px 1fr auto;
-  align-items: start;
-  gap: 30px;
-  padding-top: 13px;
-  border-top: 2px solid var(--acid);
+  transition: background .18s;
+}
+
+.year-fold > summary:hover {
+  background: var(--raised);
 }
 
 .year-fold > summary::-webkit-details-marker {
@@ -1651,39 +1710,36 @@ textarea::placeholder {
 
 .year-fold > summary:focus-visible {
   outline: 2px solid var(--acid);
-  outline-offset: 4px;
+  outline-offset: -2px;
 }
 
 .year-fold > summary strong {
-  display: block;
   font-family: Georgia, serif;
-  font-size: 36px;
+  font-size: 26px;
   font-weight: 400;
 }
 
 .year-fold > summary .year-count {
-  align-self: center;
   color: var(--subtle);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .year-fold > summary .year-chevron {
-  align-self: center;
+  order: 3;
+  margin-left: auto;
   color: var(--muted);
-  font-size: 16px;
-  transition: transform .18s ease;
+  transition: transform .2s ease, color .2s;
 }
 
 .year-fold[open] > summary .year-chevron {
   transform: rotate(180deg);
+  color: var(--acid);
 }
 
 .year-fold-body {
-  margin-top: 18px;
   border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
   background: rgba(18,20,20,.7);
 }
 
@@ -1691,25 +1747,62 @@ textarea::placeholder {
   grid-template-columns: 64px minmax(0, 1fr) auto auto;
 }
 
-.year-fold-totals {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 28px;
-  padding: 14px 18px;
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 11px;
-  text-transform: uppercase;
+.year-fold .book-row.favorite-card {
+  grid-template-columns: 64px minmax(0, 1fr);
 }
 
-.year-fold-totals strong {
-  margin-left: 6px;
-  color: var(--ink);
+/* Resumen final de Leídos */
+.reading-summary {
+  margin-top: 60px;
+}
+
+.reading-summary-table {
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.reading-summary-row {
+  display: grid;
+  grid-template-columns: 1fr 110px 110px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--muted);
   font-size: 13px;
 }
 
-.year-fold-totals .fav strong {
+.reading-summary-row:last-child {
+  border-bottom: 0;
+}
+
+.reading-summary-row > :nth-child(n + 2) {
+  text-align: right;
+}
+
+.reading-summary-row strong {
+  color: var(--ink);
+  font-family: Georgia, serif;
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.reading-summary-row.head {
+  color: var(--subtle);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.reading-summary-row .fav {
   color: var(--gold);
+}
+
+.reading-summary-row.total {
+  border-top: 1px solid var(--line);
+  background: var(--raised);
+  color: var(--ink);
+  font-weight: 700;
 }
 
 .page-loading {
@@ -2982,12 +3075,11 @@ textarea::placeholder {
   }
 
   .year-fold > summary {
-    grid-template-columns: 1fr auto auto;
-    gap: 12px;
-    align-items: baseline;
+    padding: 0 16px;
   }
 
-  .year-fold .book-row {
+  .year-fold .book-row,
+  .year-fold .book-row.favorite-card {
     grid-template-columns: 52px minmax(0, 1fr);
   }
 
@@ -2995,8 +3087,23 @@ textarea::placeholder {
     grid-column: 1 / -1;
   }
 
-  .year-fold-totals {
-    padding: 12px 14px;
+  .reading-summary-row {
+    grid-template-columns: 1fr 70px 80px;
+    padding: 12px 16px;
+  }
+
+  .recent-list li {
+    gap: 14px;
+    padding: 12px 17px;
+  }
+
+  .recent-list .book-cover {
+    width: 52px;
+    height: 73px;
+  }
+
+  .recent-copy strong {
+    font-size: 17px;
   }
 
   .stats-tabs {
