@@ -562,6 +562,91 @@ summary:focus-visible {
   font-size: 12px;
 }
 
+.progress-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--subtle);
+  font-size: 12px;
+}
+
+.progress-editor input {
+  text-align: right;
+}
+
+.progress-editor input[aria-invalid="true"] {
+  border-color: var(--coral);
+}
+
+.save-indicator {
+  min-height: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.save-indicator:empty {
+  display: none;
+}
+
+.save-dot {
+  width: 7px;
+  height: 7px;
+  display: inline-block;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.save-indicator.saving .save-dot {
+  animation: save-pulse 1s ease-in-out infinite;
+}
+
+.save-indicator.saved {
+  color: var(--acid);
+}
+
+.save-indicator.error {
+  color: var(--coral);
+}
+
+.save-indicator.error .save-dot {
+  background: var(--coral);
+}
+
+.save-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+  padding: 2px 7px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.save-retry:hover {
+  border-color: var(--coral);
+}
+
+@keyframes save-pulse {
+  50% { opacity: .3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .save-indicator.saving .save-dot { animation: none; }
+}
+
 .progress-block input,
 .detail-facts input {
   width: 70px;

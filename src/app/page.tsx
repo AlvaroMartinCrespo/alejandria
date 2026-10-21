@@ -9,6 +9,7 @@ import { BookCover } from "@/components/book-cover";
 import { BookRow } from "@/components/book-row";
 import { useLibrary } from "@/components/library-provider";
 import { LibrarySkeleton } from "@/components/library-skeleton";
+import { ProgressEditor } from "@/components/progress-editor";
 
 const DAILY_QUOTES = [
   { text: "El que lee mucho y anda mucho, ve mucho y sabe mucho.", author: "Miguel de Cervantes" },
@@ -135,18 +136,13 @@ export default function Home() {
                     <div className="progress-block">
                       <div><span>Progreso</span><strong>{progress}%</strong></div>
                       <div className="progress-track"><i style={{ width: `${progress}%` }} /></div>
-                      <label>
-                        Porcentaje leído
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={progress}
-                          disabled={!editing}
-                          onChange={(event) => void updateBook(reading.$id, { progress: Number(event.target.value) })}
-                        />
-                        %
-                      </label>
+                      <ProgressEditor
+                        bookId={reading.$id}
+                        title={reading.title}
+                        progress={progress}
+                        disabled={!editing}
+                        onSave={(id, value) => updateBook(id, { progress: value })}
+                      />
                     </div>
                   </div>
                 </div>
