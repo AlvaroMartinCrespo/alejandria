@@ -4,7 +4,8 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Download, FileText, Upload } from "lucide-react";
-import { LibraryStatusChart, RatingChart, ReadingYearsChart } from "@/components/library-charts";
+import { LibraryStatusChart, RatingChart } from "@/components/library-charts";
+import { LibraryRecap } from "@/components/library-recap";
 import { BookRow } from "@/components/book-row";
 import { BookCover } from "@/components/book-cover";
 import { YearFold } from "@/components/year-fold";
@@ -16,10 +17,11 @@ import { buildLibraryBackup, downloadJson } from "@/lib/backup";
 import { MAX_RATING, RATING_VALUES_DESC } from "@/lib/rating";
 import type { Book } from "@/types/book";
 
-type Tab = "resumen" | "favoritos" | "valoraciones";
+type Tab = "resumen" | "recap" | "favoritos" | "valoraciones";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "resumen", label: "Resumen" },
+  { id: "recap", label: "Recap" },
   { id: "favoritos", label: "Favoritos" },
   { id: "valoraciones", label: "Valoraciones" },
 ];
@@ -61,32 +63,31 @@ function Statistics() {
   const initialTab = useSearchParams().get("tab");
   const [tab, setTab] = useState<Tab>(TABS.some((item) => item.id === initialTab) ? (initialTab as Tab) : "resumen");
 
+  // `completed` = todos los libros leídos (histórico). Lo usan Recap, Favoritos y Valoraciones.
+  // Resumen, en cambio, solo muestra el año actual (`completedThisYear`).
+  const currentYear = new Date().getFullYear();
   const completed = books.filter((book) => book.status === "read");
-  const pages = completed.reduce((sum, book) => sum + (book.pageCount ?? 0), 0);
-  const rated = completed.filter((book) => book.rating !== null);
+  const completedThisYear = completed.filter((book) => book.finishedYear === currentYear);
+  const pages = completedThisYear.reduce((sum, book) => sum + (book.pageCount ?? 0), 0);
+  const rated = completedThisYear.filter((book) => book.rating !== null);
   const average = rated.length ? rated.reduce((sum, book) => sum + (book.rating ?? 0), 0) / rated.length : 0;
-  const authorCounts = completed.flatMap((book) => book.authors).reduce<Record<string, number>>((counts, author) => {
+  const authorCounts = completedThisYear.flatMap((book) => book.authors).reduce<Record<string, number>>((counts, author) => {
     counts[author] = (counts[author] ?? 0) + 1;
     return counts;
   }, {});
   const topAuthor = Object.entries(authorCounts).sort((a, b) => b[1] - a[1])[0];
-  const years = Array.from(new Set(completed.map((book) => book.finishedYear).filter(Boolean) as number[])).sort((a, b) => a - b);
   const statusCounts = {
     toRead: books.filter((book) => book.status === "to_read").length,
-    read: completed.length,
+    read: completedThisYear.length,
   };
   const ratingCounts = RATING_VALUES_DESC.map((rating) => ({
     rating,
-    count: completed.filter((book) => book.rating === rating).length,
+    count: completedThisYear.filter((book) => book.rating === rating).length,
   }));
   const statusData = [
     { name: "Quiero leer", value: statusCounts.toRead, color: "#e9bb58" },
-    { name: "Leídos", value: statusCounts.read, color: "#ff735d" },
+    { name: `Leídos en ${currentYear}`, value: statusCounts.read, color: "#ff735d" },
   ];
-  const yearData = years.map((year) => ({
-    year,
-    count: completed.filter((book) => book.finishedYear === year).length,
-  }));
 
   // Favoritos / imprescindibles: libros leídos marcados como favoritos.
   const favorites = completed.filter((book) => book.favorite).sort(sortByFinishedDesc);
@@ -102,7 +103,7 @@ function Statistics() {
   }
 
   // Anime vistos este año (sección final de Resumen).
-  const animeYear = new Date().getFullYear();
+  const animeYear = currentYear;
   const animeThisYear = anime.filter((item) => item.status === "watched" && item.finishedYear === animeYear);
   const animeThisYearEpisodes = animeThisYear.reduce((sum, item) => sum + animeEpisodesWatched(item), 0);
 
@@ -165,36 +166,30 @@ function Statistics() {
       {tab === "resumen" && (
         <>
           <section className="stat-grid">
-            <article><span>Libros terminados</span><strong>{completed.length}</strong><small>en total</small></article>
-            <article><span>Páginas leídas</span><strong>{pages.toLocaleString("es")}</strong><small>aproximadamente</small></article>
+            <article><span>Libros terminados</span><strong>{completedThisYear.length}</strong><small>en {currentYear}</small></article>
+            <article><span>Páginas leídas</span><strong>{pages.toLocaleString("es")}</strong><small>en {currentYear}, aproximadamente</small></article>
             <article><span>Puntuación media</span><strong>{average ? average.toFixed(1) : "—"}</strong><small>sobre 10</small></article>
-            <article><span>Autor más leído</span><strong className="author-stat">{topAuthor?.[0] ?? "—"}</strong><small>{topAuthor ? `${topAuthor[1]} libros` : "sin datos"}</small></article>
+            <article><span>Autor más leído</span><strong className="author-stat">{topAuthor?.[0] ?? "—"}</strong><small>{topAuthor ? `${topAuthor[1]} libros en ${currentYear}` : "sin datos este año"}</small></article>
           </section>
           <section className="stats-insights">
             <article className="status-overview">
               <div>
-                <p className="eyebrow">Tu biblioteca hoy</p>
+                <p className="eyebrow">Tu biblioteca en {currentYear}</p>
                 <h2>Lecturas por estado</h2>
               </div>
               <LibraryStatusChart data={statusData} />
               <div className="status-legend">
                 <span className="to-read"><i />Quiero leer<strong>{statusCounts.toRead}</strong></span>
-                <span className="read"><i />Leídos<strong>{statusCounts.read}</strong></span>
+                <span className="read"><i />Leídos en {currentYear}<strong>{statusCounts.read}</strong></span>
               </div>
             </article>
             <article className="rating-overview">
               <div>
-                <p className="eyebrow">Valoraciones</p>
+                <p className="eyebrow">Valoraciones de {currentYear}</p>
                 <h2>Cómo puntúas</h2>
               </div>
               <RatingChart data={ratingCounts} />
             </article>
-          </section>
-          <section className="year-chart">
-            <div className="section-title"><div><p className="eyebrow">Ritmo de lectura</p><h2>Libros por año</h2></div></div>
-            {years.length
-              ? <ReadingYearsChart data={yearData} />
-              : <div className="big-empty compact"><p>Los años aparecerán cuando termines tus primeras lecturas.</p></div>}
           </section>
           {anime.length > 0 && !animeError && (
             <section className="year-chart anime-year-summary">
@@ -208,6 +203,8 @@ function Statistics() {
           )}
         </>
       )}
+
+      {tab === "recap" && <LibraryRecap books={completed} />}
 
       {tab === "favoritos" && (
         <section className="favorites-panel">
