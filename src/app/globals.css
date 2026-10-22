@@ -4537,3 +4537,36 @@ textarea::placeholder {
 .monthly-reading .recap-note {
   padding: 12px 0 0;
 }
+
+/* Indicador Actualizando… / Actualizado dentro de etiquetas y cabeceras de la ficha */
+.detail-facts .save-indicator,
+.author-editor .save-indicator,
+.notes-section > div .save-indicator {
+  display: inline-flex;
+  margin: 0 0 0 6px;
+  font-size: 9px;
+  font-weight: 800;
+  vertical-align: middle;
+}
+
+.detail-facts .save-indicator.saving,
+.author-editor .save-indicator.saving,
+.notes-section > div .save-indicator.saving {
+  color: var(--gold);
+}
+
+.detail-facts .save-indicator.saved,
+.author-editor .save-indicator.saved,
+.notes-section > div .save-indicator.saved {
+  color: var(--acid);
+}
+
+.detail-facts .save-indicator.error,
+.author-editor .save-indicator.error,
+.notes-section > div .save-indicator.error {
+  color: var(--coral);
+}
+
+.status-actions .save-indicator {
+  align-self: center;
+}
