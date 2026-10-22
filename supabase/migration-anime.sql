@@ -23,6 +23,7 @@ create table if not exists public.anime (
   total_episodes integer check (total_episodes between 0 and 100000),
   total_seasons integer check (total_seasons between 1 and 100),
   finished_year integer check (finished_year between 1900 and 2100),
+  finished_month smallint check (finished_month between 1 and 12),
   last_watched_at timestamptz,
   sort_order bigint check (sort_order >= 0),
   notes text not null default '' check (char_length(notes) <= 50000),

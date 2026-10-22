@@ -22,6 +22,7 @@ export interface Book {
   collectionId: string | null;
   rating: number | null; // 0-10
   finishedYear: number | null; // año en que se terminó de leer
+  finishedMonth: number | null; // mes (1-12) en que se terminó de leer
   addedAt: string; // ISO date
   progress: number; // porcentaje leído, de 0 a 100
   notes?: string; // notas personales opcionales

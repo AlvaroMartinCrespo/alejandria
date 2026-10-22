@@ -12,6 +12,8 @@ import {
   formatDays,
   formatHours,
   formatLongDuration,
+  MONTH_NAMES,
+  countByMonth,
   groupByYear,
   plural,
   type RecapStats,
@@ -88,7 +90,41 @@ function commonFacts(stats: RecapStats): Fact[] {
   return facts;
 }
 
-function yearFacts(year: number, stats: RecapStats, previous: { year: number; stats: RecapStats } | null): Fact[] {
+function joinNames(names: string[]) {
+  return names.length > 1 ? `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}` : names[0];
+}
+
+/** Meses con más y menos lecturas de un año. Para el año en curso solo cuentan los meses ya empezados. */
+function monthFacts(year: number, books: Book[]): Fact[] {
+  const { counts, withoutMonth } = countByMonth(books);
+  const now = new Date();
+  const lastMonth = year === now.getFullYear() ? now.getMonth() + 1 : 12;
+  const dated = counts.reduce((sum, count) => sum + count, 0);
+  if (!dated) return [];
+
+  const range = counts.slice(0, lastMonth).map((count, index) => ({ count, index }));
+  const max = Math.max(...range.map((item) => item.count));
+  const min = Math.min(...range.map((item) => item.count));
+  const namesWith = (value: number) => range.filter((item) => item.count === value).map((item) => MONTH_NAMES[item.index]);
+  const each = (names: string[], value: number) => `${plural(value, "libro", "libros")}${names.length > 1 ? " cada uno" : ""}`;
+
+  const facts: Fact[] = [];
+  const top = namesWith(max);
+  facts.push({ label: top.length > 1 ? "Meses que más leíste" : "Mes que más leíste", content: <>{joinNames(top)}<em> · {each(top, max)}</em></> });
+  if (min !== max) {
+    const low = namesWith(min);
+    facts.push({
+      label: low.length > 1 ? "Meses que menos leíste" : "Mes que menos leíste",
+      content: <>{joinNames(low)}<em> · {min === 0 ? "ningún libro" : each(low, min)}</em></>,
+    });
+  }
+  if (withoutMonth > 0) {
+    facts.push({ label: "Sin mes", content: <>{plural(withoutMonth, "libro", "libros")}<em> · cuentan en el año, pero no en ningún mes</em></> });
+  }
+  return facts;
+}
+
+function yearFacts(year: number, stats: RecapStats, previous: { year: number; stats: RecapStats } | null, books: Book[]): Fact[] {
   const period = daysInPeriod(year);
   const isCurrent = year === new Date().getFullYear();
   const facts: Fact[] = [];
@@ -123,7 +159,7 @@ function yearFacts(year: number, stats: RecapStats, previous: { year: number; st
     });
   }
 
-  return [...facts, ...commonFacts(stats)];
+  return [...facts, ...monthFacts(year, books), ...commonFacts(stats)];
 }
 
 function FactList({ facts }: { facts: Fact[] }) {
@@ -174,12 +210,12 @@ function missingDataNote(stats: RecapStats) {
   );
 }
 
-function YearRecap({ year, stats, previous }: { year: number | null; stats: RecapStats; previous: { year: number; stats: RecapStats } | null }) {
+function YearRecap({ year, books, stats, previous }: { year: number | null; books: Book[]; stats: RecapStats; previous: { year: number; stats: RecapStats } | null }) {
   const period = year ? daysInPeriod(year) : null;
   const extra = period
     ? { label: "Ritmo", value: `${Math.max(1, Math.round(period / stats.count))} días`, note: "por libro, de media" }
     : { label: "Autores", value: stats.distinctAuthors.toLocaleString("es"), note: "distintos" };
-  const facts = year ? yearFacts(year, stats, previous) : commonFacts(stats);
+  const facts = year ? yearFacts(year, stats, previous, books) : commonFacts(stats);
   return (
     <div className="recap-panel">
       <StatCards stats={stats} extra={extra} />
@@ -277,7 +313,7 @@ export function LibraryRecap({ books }: { books: Book[] }) {
                 title={String(year)}
                 count={`${plural(stats.count, "libro", "libros")} · ${stats.pages.toLocaleString("es")} págs.`}
               >
-                <YearRecap year={year} stats={stats} previous={previous} />
+                <YearRecap year={year} books={list} stats={stats} previous={previous} />
               </YearFold>
             );
           })}
@@ -288,7 +324,7 @@ export function LibraryRecap({ books }: { books: Book[] }) {
               title="—"
               count={`Sin año · ${plural(withoutYear.length, "libro", "libros")}`}
             >
-              <YearRecap year={null} stats={computeRecap(withoutYear)} previous={null} />
+              <YearRecap year={null} books={withoutYear} stats={computeRecap(withoutYear)} previous={null} />
             </YearFold>
           )}
         </div>

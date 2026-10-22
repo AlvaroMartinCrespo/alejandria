@@ -96,6 +96,7 @@ export function parseBookChanges(value: unknown): Partial<Omit<Book, "$id" | "go
   if ("collectionId" in input) changes.collectionId = optionalCollectionId(input.collectionId);
   if ("rating" in input) changes.rating = optionalInteger(input.rating, 0, MAX_RATING);
   if ("finishedYear" in input) changes.finishedYear = optionalInteger(input.finishedYear, 1900, 2100);
+  if ("finishedMonth" in input) changes.finishedMonth = optionalInteger(input.finishedMonth, 1, 12);
   if ("progress" in input) changes.progress = optionalInteger(input.progress, 0, 100) ?? 0;
   if ("notes" in input) changes.notes = text(input.notes, 50000);
 
@@ -143,6 +144,7 @@ function backupBook(value: unknown): Book {
     collectionId: optionalCollectionId(input.collectionId ?? input.collection_id),
     rating: optionalInteger(input.rating, 0, MAX_RATING),
     finishedYear: optionalInteger(input.finishedYear ?? input.finished_year, 1900, 2100),
+    finishedMonth: optionalInteger(input.finishedMonth ?? input.finished_month, 1, 12),
     addedAt,
     progress: optionalInteger(input.progress, 0, 100) ?? legacyProgress,
     notes: text(input.notes, 50000),

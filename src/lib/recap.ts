@@ -33,6 +33,30 @@ export interface RecapStats {
   topDecade: [number, number] | null;
 }
 
+export const MONTH_NAMES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+export const MONTH_SHORT = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+export interface MonthlyReading {
+  /** Libros terminados en cada mes (índice 0 = enero). */
+  counts: number[];
+  /** Libros del periodo que no tienen mes y, por tanto, no entran en `counts`. */
+  withoutMonth: number;
+}
+
+/** Libros terminados por mes. Recibe solo los libros del año que se quiere analizar. */
+export function countByMonth(books: Book[]): MonthlyReading {
+  const counts = Array<number>(12).fill(0);
+  let withoutMonth = 0;
+  for (const book of books) {
+    if (book.finishedMonth && book.finishedMonth >= 1 && book.finishedMonth <= 12) counts[book.finishedMonth - 1] += 1;
+    else withoutMonth += 1;
+  }
+  return { counts, withoutMonth };
+}
+
 export function readingHours(pages: number) {
   return pages / PAGES_PER_HOUR;
 }

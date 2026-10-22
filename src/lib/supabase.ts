@@ -18,6 +18,7 @@ const BOOK_COLUMNS = [
   "collection_id",
   "rating",
   "finished_year",
+  "finished_month",
   "added_at",
   "progress",
   "notes",
@@ -38,6 +39,7 @@ type BookRow = {
   collection_id: string | null;
   rating: number | null;
   finished_year: number | null;
+  finished_month: number | null;
   added_at: string;
   progress: number;
   notes: string;
@@ -100,6 +102,7 @@ function fromRow(row: BookRow): Book {
     collectionId: row.collection_id,
     rating: row.rating,
     finishedYear: row.finished_year,
+    finishedMonth: row.finished_month,
     addedAt: row.added_at,
     progress: row.progress,
     notes: row.notes,
@@ -122,6 +125,7 @@ export function toRow(book: Book): BookRow {
     collection_id: book.collectionId,
     rating: book.rating,
     finished_year: book.finishedYear,
+    finished_month: book.finishedMonth,
     added_at: book.addedAt,
     progress: book.progress,
     notes: book.notes ?? "",
@@ -151,6 +155,7 @@ export async function createBook(result: GoogleBookResult) {
     collectionId: null,
     rating: null,
     finishedYear: null,
+    finishedMonth: null,
     addedAt: new Date().toISOString(),
     progress: 0,
     notes: "",
@@ -180,6 +185,7 @@ export async function updateBook(
     collectionId: "collection_id",
     rating: "rating",
     finishedYear: "finished_year",
+    finishedMonth: "finished_month",
     progress: "progress",
     notes: "notes",
   };

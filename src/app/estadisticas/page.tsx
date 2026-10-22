@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Download, FileText, Upload } from "lucide-react";
-import { LibraryStatusChart, RatingChart } from "@/components/library-charts";
+import { LibraryStatusChart, MonthlyReadingChart, RatingChart } from "@/components/library-charts";
 import { LibraryRecap } from "@/components/library-recap";
 import { BookRow } from "@/components/book-row";
 import { BookCover } from "@/components/book-cover";
@@ -15,6 +15,7 @@ import { animeEpisodesWatched } from "@/lib/anime-utils";
 import { parseAnimeBackup } from "@/lib/anime-validation";
 import { buildLibraryBackup, downloadJson } from "@/lib/backup";
 import { MAX_RATING, RATING_VALUES_DESC } from "@/lib/rating";
+import { MONTH_NAMES, MONTH_SHORT, countByMonth, plural } from "@/lib/recap";
 import type { Book } from "@/types/book";
 
 type Tab = "resumen" | "recap" | "favoritos" | "valoraciones";
@@ -84,6 +85,8 @@ function Statistics() {
     rating,
     count: completedThisYear.filter((book) => book.rating === rating).length,
   }));
+  const monthly = countByMonth(completedThisYear);
+  const monthlyData = MONTH_SHORT.map((month, index) => ({ month, label: `${MONTH_NAMES[index]} ${currentYear}`, count: monthly.counts[index] }));
   const statusData = [
     { name: "Quiero leer", value: statusCounts.toRead, color: "#e9bb58" },
     { name: `Leídos en ${currentYear}`, value: statusCounts.read, color: "#ff735d" },
@@ -190,6 +193,13 @@ function Statistics() {
               </div>
               <RatingChart data={ratingCounts} />
             </article>
+          </section>
+          <section className="year-chart monthly-reading">
+            <div className="section-title"><div><p className="eyebrow">{currentYear}</p><h2>Libros leídos por mes</h2></div></div>
+            <MonthlyReadingChart data={monthlyData} />
+            {monthly.withoutMonth > 0 && (
+              <p className="recap-note">{plural(monthly.withoutMonth, "libro de este año no tiene", "libros de este año no tienen")} mes asignado, así que no aparece{monthly.withoutMonth === 1 ? "" : "n"} en el gráfico. Puedes indicarlo en la ficha de cada libro.</p>
+            )}
           </section>
           {anime.length > 0 && !animeError && (
             <section className="year-chart anime-year-summary">

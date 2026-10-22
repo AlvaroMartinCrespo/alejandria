@@ -128,3 +128,24 @@ export function ReadingYearsChart({ data }: { data: Array<{ year: number; count:
     </div>
   );
 }
+
+export function MonthlyReadingChart({ data }: { data: Array<{ month: string; label: string; count: number }> }) {
+  return (
+    <div className="mono-year-chart" role="img" aria-label={data.map((item) => `${item.label}: ${item.count} libros`).join(", ")}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 14, right: 8, left: -25, bottom: 0 }}>
+          <CartesianGrid vertical={false} stroke="rgba(255, 255, 255, .055)" strokeDasharray="2 3" />
+          <XAxis dataKey="month" interval={0} tickLine={false} axisLine={false} tick={{ fill: "#999b96", fontSize: 11 }} />
+          <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: "#696b67", fontSize: 10 }} />
+          <Tooltip
+            cursor={{ fill: "rgba(184, 243, 74, .035)" }}
+            contentStyle={tooltipStyle}
+            labelFormatter={(_, payload) => payload?.[0]?.payload?.label ?? ""}
+            formatter={(value) => [`${value} libros`, "Terminados"]}
+          />
+          <Bar dataKey="count" fill="#b8f34a" radius={[8, 8, 2, 2]} maxBarSize={34} animationDuration={1000} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}

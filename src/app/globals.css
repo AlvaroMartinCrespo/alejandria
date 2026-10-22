@@ -648,7 +648,8 @@ summary:focus-visible {
 }
 
 .progress-block input,
-.detail-facts input {
+.detail-facts input,
+.detail-facts select {
   width: 70px;
   padding: 5px 7px;
   color: var(--ink);
@@ -4520,4 +4521,19 @@ textarea::placeholder {
   .recap-total-head h2 {
     font-size: 28px;
   }
+}
+
+.finished-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.detail-facts .finished-inputs select {
+  width: auto;
+  max-width: 120px;
+}
+
+.monthly-reading .recap-note {
+  padding: 12px 0 0;
 }

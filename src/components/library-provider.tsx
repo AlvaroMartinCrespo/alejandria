@@ -180,6 +180,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     const changes: BookChanges = {
       status,
       finishedYear: status === "read" ? new Date().getFullYear() : null,
+      finishedMonth: status === "read" ? new Date().getMonth() + 1 : null,
       order: status === "to_read" ? Date.now() : null,
       collectionId: null,
     };

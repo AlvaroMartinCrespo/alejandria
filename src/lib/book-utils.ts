@@ -35,6 +35,7 @@ export function normalizeBook(value: BookInput): Book {
     collectionId: value.collectionId ?? null,
     rating: value.rating ?? null,
     finishedYear: value.finishedYear ?? null,
+    finishedMonth: value.finishedMonth ?? null,
     addedAt: value.addedAt ?? new Date().toISOString(),
     progress: Math.max(0, Math.min(100, value.progress ?? legacyProgress)),
     notes: value.notes ?? "",
@@ -50,6 +51,7 @@ export function googleResultToBook(result: GoogleBookResult, id: string): Book {
     collectionId: null,
     rating: null,
     finishedYear: null,
+    finishedMonth: null,
     addedAt: new Date().toISOString(),
   });
 }
