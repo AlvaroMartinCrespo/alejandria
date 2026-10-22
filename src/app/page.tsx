@@ -10,21 +10,7 @@ import { BookRow } from "@/components/book-row";
 import { useLibrary } from "@/components/library-provider";
 import { LibrarySkeleton } from "@/components/library-skeleton";
 import { ProgressEditor } from "@/components/progress-editor";
-
-const DAILY_QUOTES = [
-  { text: "El que lee mucho y anda mucho, ve mucho y sabe mucho.", author: "Miguel de Cervantes" },
-  { text: "Siempre imaginé que el paraíso sería algún tipo de biblioteca.", author: "Jorge Luis Borges" },
-  { text: "La lectura es a la mente lo que el ejercicio al cuerpo.", author: "Joseph Addison" },
-  { text: "No hay amigo tan leal como un libro.", author: "Ernest Hemingway" },
-  { text: "Lee y conducirás, no leas y serás conducido.", author: "Santa Teresa de Jesús" },
-  { text: "Los libros son una magia única y portátil.", author: "Stephen King" },
-  { text: "Una habitación sin libros es como un cuerpo sin alma.", author: "Cicerón" },
-] as const;
-
-function getDailyQuote() {
-  const day = Math.floor(Date.now() / 86_400_000);
-  return DAILY_QUOTES[day % DAILY_QUOTES.length];
-}
+import { getDailyQuote } from "@/lib/quotes";
 
 export default function Home() {
   const { books, collections, createCollection, deleteCollection, editing, loading, moveBook, moveCollection, renameCollection, setStatus, updateBook } = useLibrary();
