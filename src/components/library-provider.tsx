@@ -24,6 +24,7 @@ interface LibraryContextValue {
   collections: Collection[];
   loading: boolean;
   editing: boolean;
+  editorChecked: boolean;
   editorConfigured: boolean;
   storageMode: "supabase" | "local";
   notice: { type: "success" | "error"; message: string } | null;
@@ -51,6 +52,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [editorChecked, setEditorChecked] = useState(false);
   const [editorConfigured, setEditorConfigured] = useState(false);
   const [storageMode, setStorageMode] = useState<"supabase" | "local">("local");
   const [notice, setNotice] = useState<LibraryContextValue["notice"]>(null);
@@ -111,6 +113,8 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       setEditorConfigured(session.configured);
     } catch {
       setEditing(false);
+    } finally {
+      setEditorChecked(true);
     }
   });
 
@@ -388,6 +392,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         collections,
         loading,
         editing,
+        editorChecked,
         editorConfigured,
         storageMode,
         notice,

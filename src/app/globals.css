@@ -4570,3 +4570,9 @@ textarea::placeholder {
 .status-actions .save-indicator {
   align-self: center;
 }
+
+/* Edición bloqueada: los controles deshabilitados dejan pasar el toque para que
+   app-shell pueda abrir el desbloqueo (los disabled no emiten clics en móvil). */
+.app-frame[data-locked="true"] :is(button, input, select, textarea):disabled {
+  pointer-events: none;
+}

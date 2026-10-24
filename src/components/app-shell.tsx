@@ -15,7 +15,7 @@ import { STATUS_LABELS } from "@/lib/book-utils";
 
 function ShellContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { books, editing, editorConfigured, storageMode, notice, clearNotice, lock, unlock } = useLibrary();
+  const { books, editing, editorChecked, editorConfigured, storageMode, notice, clearNotice, lock, unlock } = useLibrary();
   const { anime } = useAnime();
   const onAnime = pathname.startsWith("/anime");
   const addLabel = onAnime ? "Añadir anime" : "Añadir libro";
@@ -48,6 +48,30 @@ function ShellContent({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [searchOpen]);
 
+  // Con la edición bloqueada, tocar cualquier control deshabilitado (Añadir, inputs,
+  // puntuación...) abre el desbloqueo en vez de no hacer nada. Los controles
+  // deshabilitados no emiten clics (sobre todo en móvil), así que el CSS los hace
+  // "transparentes" al toque y aquí se comprueba si el toque cayó sobre uno.
+  useEffect(() => {
+    if (!editorChecked || editing || lockOpen) return;
+    const controls = "button:disabled, input:disabled, select:disabled, textarea:disabled";
+    const onClick = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".modal-backdrop, .search-overlay, .toast")) return;
+      if (target.closest("a[href], summary, button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled)")) return;
+      const { clientX: x, clientY: y } = event;
+      const hitDisabled = target.closest("[aria-disabled='true']") !== null ||
+        Array.from(document.querySelectorAll<HTMLElement>(controls)).some((element) => {
+          const rect = element.getBoundingClientRect();
+          return rect.width > 0 && rect.height > 0 && x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+        });
+      if (hitDisabled) setLockOpen(true);
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, [editorChecked, editing, lockOpen]);
+
   const links = [
     { href: "/", icon: House, label: "Inicio" },
     { href: "/leidos", icon: BookCheck, label: "Leídos" },
@@ -57,7 +81,7 @@ function ShellContent({ children }: { children: ReactNode }) {
   const isActive = (href: string) => (href === "/anime" ? onAnime : pathname === href);
 
   return (
-    <div className="app-frame">
+    <div className="app-frame" data-locked={editorChecked && !editing ? "true" : undefined}>
       <header className="topbar">
         <Link href="/" className="brand" aria-label="Alejandría, inicio">
           <span className="brand-mark">A</span>
