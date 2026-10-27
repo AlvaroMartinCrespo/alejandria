@@ -4576,3 +4576,64 @@ textarea::placeholder {
 .app-frame[data-locked="true"] :is(button, input, select, textarea):disabled {
   pointer-events: none;
 }
+
+/* ---- Autores leídos (pestaña Autores de Estadísticas) ---- */
+.author-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(18,20,20,.7);
+}
+
+.year-fold-body > .author-list {
+  border-top: 0;
+  border-bottom: 0;
+}
+
+.author-list li {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.author-list li span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: Georgia, serif;
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.author-list li em {
+  flex: 0 0 auto;
+  color: var(--subtle);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+  .author-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 680px) {
+  .author-list { grid-template-columns: minmax(0, 1fr); }
+  .author-list li { padding: 12px 14px; }
+}
+
+@media print {
+  .author-list { display: block; columns: 2; background: none; }
+  .author-list li { break-inside: avoid; }
+  .author-list li span { color: #111; }
+}

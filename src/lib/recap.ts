@@ -118,6 +118,21 @@ export function computeRecap(books: Book[]): RecapStats {
   };
 }
 
+/**
+ * Autores de una lista de libros con cuántos libros de cada uno hay,
+ * de más a menos leídos y, en empate, por orden alfabético.
+ */
+export function countAuthors(books: Book[]): [string, number][] {
+  const counts = new Map<string, number>();
+  for (const book of books) {
+    // Un mismo autor repetido dentro de un libro cuenta una sola vez.
+    for (const author of new Set(book.authors.map((name) => name.trim()).filter(Boolean))) {
+      counts.set(author, (counts.get(author) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es"));
+}
+
 /** Agrupa libros por año de lectura. Los que no tienen año quedan aparte. */
 export function groupByYear(books: Book[]) {
   const byYear = new Map<number, Book[]>();

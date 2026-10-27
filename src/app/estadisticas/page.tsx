@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Download, FileText, Upload } from "lucide-react";
 import { LibraryStatusChart, MonthlyReadingChart, RatingChart } from "@/components/library-charts";
+import { LibraryAuthors } from "@/components/library-authors";
 import { LibraryRecap } from "@/components/library-recap";
 import { BookRow } from "@/components/book-row";
 import { BookCover } from "@/components/book-cover";
@@ -18,11 +19,12 @@ import { MAX_RATING, RATING_VALUES_DESC } from "@/lib/rating";
 import { MONTH_NAMES, MONTH_SHORT, countByMonth, plural } from "@/lib/recap";
 import type { Book } from "@/types/book";
 
-type Tab = "resumen" | "recap" | "favoritos" | "valoraciones";
+type Tab = "resumen" | "recap" | "autores" | "favoritos" | "valoraciones";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "resumen", label: "Resumen" },
   { id: "recap", label: "Recap" },
+  { id: "autores", label: "Autores" },
   { id: "favoritos", label: "Favoritos" },
   { id: "valoraciones", label: "Valoraciones" },
 ];
@@ -215,6 +217,8 @@ function Statistics() {
       )}
 
       {tab === "recap" && <LibraryRecap books={completed} />}
+
+      {tab === "autores" && <LibraryAuthors books={completed} />}
 
       {tab === "favoritos" && (
         <section className="favorites-panel">
