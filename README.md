@@ -121,6 +121,13 @@ El estado detallado por fases (modelo de datos, diseño, reordenación drag & dr
 
 ---
 
+## Identidad visual
+
+- **Tipografía** (`src/lib/fonts.ts`, `next/font/google`, auto-alojada en el build): Fraunces (serif), Instrument Sans (interfaz), IBM Plex Mono (metadatos: páginas, años, etiquetas de la ficha) y Noto Serif JP (japonés y sellos). Las pilas están en `:root` de `globals.css` (`--serif`, `--sans`, `--mono`, `--jp`).
+- **Sellos hanko** (`src/components/hanko.tsx`): «Leído» (読了, cuadrado) y «Favorito» (好, redondo), en SVG con un filtro que imita la tinta estampada.
+- **Color por portada** (`src/lib/cover-tone.ts`): el color dominante de la portada llega como `--book-color` a la ficha, a «Leyendo ahora» y a las barras de progreso. Sin dependencias; solo funciona con imágenes servidas por `next/image` (mismo origen).
+- **Accesibilidad**: `--muted` y `--subtle` cumplen 4,5:1 (AA) sobre todas las superficies oscuras; el texto más pequeño es de 10 px; las animaciones nuevas respetan `prefers-reduced-motion`.
+
 ## 🤝 Contribuciones
 
 Este es un proyecto personal, pero las sugerencias, issues y pull requests son bienvenidos.

@@ -10,10 +10,12 @@ import { BookRow } from "@/components/book-row";
 import { useLibrary } from "@/components/library-provider";
 import { LibrarySkeleton } from "@/components/library-skeleton";
 import { ProgressEditor } from "@/components/progress-editor";
+import { toneStyle, useCoverTone } from "@/lib/cover-tone";
 import { getDailyQuote } from "@/lib/quotes";
+import type { Book } from "@/types/book";
 
 export default function Home() {
-  const { books, collections, createCollection, deleteCollection, editing, loading, moveBook, moveCollection, renameCollection, setStatus, updateBook } = useLibrary();
+  const { books, collections, createCollection, deleteCollection, editing, loading, moveBook, moveCollection, renameCollection, setStatus } = useLibrary();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [newCollectionName, setNewCollectionName] = useState("");
   const [showNewCollection, setShowNewCollection] = useState(false);
@@ -86,54 +88,7 @@ export default function Home() {
         <section className="now-reading">
           <div className="section-label"><span>Leyendo ahora</span><i /></div>
           <div className="now-reading-list">
-            {readingList.map((reading) => {
-              const progress = reading.progress ?? 0;
-              return (
-                <div className="reading-layout" key={reading.$id}>
-                  <div className="reading-cover-wrap">
-                    <Link href={`/libro/${reading.$id}`} className="reading-cover-link">
-                      <BookCover title={reading.title} url={reading.coverUrl} priority />
-                    </Link>
-                    <div className="reading-cover-actions" aria-label={`Cambiar estado de ${reading.title}`}>
-                      <button
-                        className="reading-state-button to-read"
-                        onClick={() => void setStatus(reading.$id, "to_read")}
-                        aria-label={`Mover ${reading.title} a Quiero leer`}
-                        title="Mover a Quiero leer"
-                        disabled={!editing}
-                      >
-                        <Undo2 size={17} aria-hidden="true" />
-                      </button>
-                      <button
-                        className="reading-state-button read"
-                        onClick={() => void setStatus(reading.$id, "read")}
-                        aria-label={`Marcar ${reading.title} como terminado`}
-                        title="Marcar como terminado"
-                        disabled={!editing}
-                      >
-                        <Check size={18} aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="reading-copy">
-                    <p>{reading.authors.join(", ")}</p>
-                    <Link href={`/libro/${reading.$id}`}><h2>{reading.title}</h2></Link>
-                    {reading.synopsis && <p className="reading-synopsis">{reading.synopsis}</p>}
-                    <div className="progress-block">
-                      <div><span>Progreso</span><strong>{progress}%</strong></div>
-                      <div className="progress-track"><i style={{ width: `${progress}%` }} /></div>
-                      <ProgressEditor
-                        bookId={reading.$id}
-                        title={reading.title}
-                        progress={progress}
-                        disabled={!editing}
-                        onSave={(id, value) => updateBook(id, { progress: value })}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {readingList.map((reading) => <ReadingEntry key={reading.$id} reading={reading} />)}
           </div>
         </section>
       ) : (
@@ -238,7 +193,60 @@ export default function Home() {
   );
 }
 
-function CollectionSection({ id, label, books, open, onOpenChange, menu }: { id: string; label: string; books: import("@/types/book").Book[]; open: boolean; onOpenChange: (open: boolean) => void; menu?: React.ReactNode }) {
+/** Un libro de «Leyendo ahora»: el color dominante de su portada tiñe el resplandor y la barra de progreso. */
+function ReadingEntry({ reading }: { reading: Book }) {
+  const { editing, setStatus, updateBook } = useLibrary();
+  const { tone, onTone } = useCoverTone(reading.coverUrl);
+  const progress = reading.progress ?? 0;
+
+  return (
+    <div className="reading-layout" data-tone={tone ? "ready" : undefined} style={toneStyle(tone)}>
+      <div className="reading-cover-wrap">
+        <Link href={`/libro/${reading.$id}`} className="reading-cover-link">
+          <BookCover title={reading.title} url={reading.coverUrl} priority sizes="(max-width: 680px) 96px, 154px" onTone={onTone} />
+        </Link>
+        <div className="reading-cover-actions" aria-label={`Cambiar estado de ${reading.title}`}>
+          <button
+            className="reading-state-button to-read"
+            onClick={() => void setStatus(reading.$id, "to_read")}
+            aria-label={`Mover ${reading.title} a Quiero leer`}
+            title="Mover a Quiero leer"
+            disabled={!editing}
+          >
+            <Undo2 size={17} aria-hidden="true" />
+          </button>
+          <button
+            className="reading-state-button read"
+            onClick={() => void setStatus(reading.$id, "read")}
+            aria-label={`Marcar ${reading.title} como terminado`}
+            title="Marcar como terminado"
+            disabled={!editing}
+          >
+            <Check size={18} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      <div className="reading-copy">
+        <p>{reading.authors.join(", ")}</p>
+        <Link href={`/libro/${reading.$id}`}><h2>{reading.title}</h2></Link>
+        {reading.synopsis && <p className="reading-synopsis">{reading.synopsis}</p>}
+        <div className="progress-block">
+          <div><span>Progreso</span><strong>{progress}%</strong></div>
+          <div className="progress-track"><i style={{ width: `${progress}%` }} /></div>
+          <ProgressEditor
+            bookId={reading.$id}
+            title={reading.title}
+            progress={progress}
+            disabled={!editing}
+            onSave={(id, value) => updateBook(id, { progress: value })}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CollectionSection({ id, label, books, open, onOpenChange, menu }: { id: string; label: string; books: Book[]; open: boolean; onOpenChange: (open: boolean) => void; menu?: React.ReactNode }) {
   const collectionId = id === "unclassified" ? null : id;
   const { editing, moveBook } = useLibrary();
   const { setNodeRef } = useDroppable({ id: `collection:${collectionId ?? ""}` });

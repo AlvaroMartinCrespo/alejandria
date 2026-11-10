@@ -3,10 +3,12 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { BookCover } from "@/components/book-cover";
+import { Hanko } from "@/components/hanko";
 import { useLibrary } from "@/components/library-provider";
 import { LibrarySkeleton } from "@/components/library-skeleton";
 import { SaveIndicator, useAutosave, useSaveStatus, type SaveStatus } from "@/components/save-status";
 import { STATUS_LABELS } from "@/lib/book-utils";
+import { toneStyle, useCoverTone } from "@/lib/cover-tone";
 import { RATING_VALUES } from "@/lib/rating";
 import { MONTH_NAMES } from "@/lib/recap";
 import type { BookStatus } from "@/types/book";
@@ -17,6 +19,7 @@ export default function BookDetailPage() {
   const { books, editing, loading, updateBook, setStatus, toggleFavorite, removeBook } = useLibrary();
   const status = useSaveStatus();
   const book = books.find((item) => item.$id === id);
+  const { tone, onTone } = useCoverTone(book?.coverUrl ?? null);
 
   if (loading) return <LibrarySkeleton rows={2} />;
   if (!book) return <div className="big-empty"><strong>Este libro no está en tu biblioteca.</strong><button className="button secondary" onClick={() => router.push("/")}>Volver al inicio</button></div>;
@@ -31,14 +34,17 @@ export default function BookDetailPage() {
   }
 
   return (
-    <>
+    <div className="book-page" data-tone={tone ? "ready" : undefined} style={toneStyle(tone)}>
+      <div className="book-ambient" aria-hidden="true" />
       <button className="back-button" onClick={() => router.back()}>← Volver</button>
       <section className="detail-hero">
-        <div className="detail-cover"><BookCover title={book.title} url={book.coverUrl} priority /></div>
+        <div className="detail-cover"><BookCover title={book.title} url={book.coverUrl} priority sizes="(max-width: 680px) 104px, 230px" onTone={onTone} /></div>
         <div className="detail-title">
           <div className="detail-chips">
-            <span className={`status-chip ${book.status}`}>{STATUS_LABELS[book.status]}</span>
-            {book.favorite && <span className="status-chip favorite">Favorito</span>}
+            {book.status === "read"
+              ? <Hanko kind="read" size="lg" animate />
+              : <span className={`status-chip ${book.status}`}>{STATUS_LABELS[book.status]}</span>}
+            {book.favorite && <Hanko kind="favorite" size="lg" animate />}
           </div>
           <h1>{book.title}</h1>
           <label className="author-editor">
@@ -91,7 +97,7 @@ export default function BookDetailPage() {
       </div>
 
       <section className="danger-zone"><div><strong>Eliminar de la biblioteca</strong><p>Esta acción no se puede deshacer.</p></div><button disabled={!editing} className="danger-button" onClick={async () => { if (window.confirm(`¿Eliminar “${book.title}”?`)) { await removeBook(book.$id); router.push("/"); } }}>Eliminar libro</button></section>
-    </>
+    </div>
   );
 }
 

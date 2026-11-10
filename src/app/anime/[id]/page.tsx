@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { AnimeCover } from "@/components/anime-cover";
+import { Hanko } from "@/components/hanko";
 import { useAnime } from "@/components/anime-provider";
 import { useLibrary } from "@/components/library-provider";
 import { LibrarySkeleton } from "@/components/library-skeleton";
@@ -161,7 +162,7 @@ export default function AnimeDetailPage() {
         <div className="detail-title">
           <div className="detail-chips">
             <span className={`status-chip ${current.status}`}>{ANIME_STATUS_LABELS[current.status]}</span>
-            {current.favorite && <span className="status-chip favorite">Favorito</span>}
+            {current.favorite && <Hanko kind="favorite" size="lg" animate />}
             {saved && <span className="status-chip">Guardado</span>}
           </div>
           <h1>{current.title}</h1>

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 import { PwaRegister } from "@/components/pwa-register";
+import { fontVariables } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   title: { default: "Alejandría", template: "%s | Alejandría" },
@@ -19,7 +20,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" className={fontVariables}>
       <body><PwaRegister /><AppShell>{children}</AppShell></body>
     </html>
   );

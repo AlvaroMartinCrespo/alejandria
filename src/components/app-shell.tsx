@@ -7,6 +7,7 @@ import { useDeferredValue, useEffect, useState, type ReactNode } from "react";
 import { AddAnimeModal } from "@/components/add-anime-modal";
 import { AddBookModal } from "@/components/add-book-modal";
 import { BookCover } from "@/components/book-cover";
+import { Hanko } from "@/components/hanko";
 import { AnimeCover } from "@/components/anime-cover";
 import { AnimeProvider, useAnime } from "@/components/anime-provider";
 import { LibraryProvider, useLibrary } from "@/components/library-provider";
@@ -179,7 +180,9 @@ function ShellContent({ children }: { children: ReactNode }) {
                 <Link key={book.$id} href={`/libro/${book.$id}`} onClick={() => setSearchOpen(false)} className="global-result">
                   <BookCover title={book.title} url={book.coverUrl} />
                   <span><strong>{book.title}</strong><small>{book.authors.join(", ")}</small></span>
-                  <em className={`status-chip ${book.status}`}>{STATUS_LABELS[book.status]}</em>
+                  {book.status === "read"
+                    ? <Hanko kind="read" size="sm" />
+                    : <em className={`status-chip ${book.status}`}>{STATUS_LABELS[book.status]}</em>}
                 </Link>
               ))}
               {animeResults.map((item) => (
