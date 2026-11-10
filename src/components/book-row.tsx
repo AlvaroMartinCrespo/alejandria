@@ -5,6 +5,7 @@ import { FolderInput, GripVertical } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { BookCover } from "@/components/book-cover";
+import { Hanko } from "@/components/hanko";
 import { useLibrary } from "@/components/library-provider";
 import { STATUS_LABELS } from "@/lib/book-utils";
 import type { Book, BookStatus } from "@/types/book";
@@ -66,7 +67,7 @@ export function BookRow({
         title={book.favorite ? "Quitar de favoritos" : "Añadir a favoritos"}
         disabled={!editing}
       >
-        <span aria-hidden="true">{book.favorite ? "★" : "☆"}</span>
+        <span className="favorite-seal" aria-hidden="true"><Hanko kind="favorite" size="sm" label="" /></span>
       </button>
       {hideStatus ? null : editing ? <details className={`status-control ${book.status}`}>
         <summary aria-label={`Cambiar estado de ${book.title}`}>

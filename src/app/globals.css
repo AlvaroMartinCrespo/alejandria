@@ -378,7 +378,7 @@ summary:focus-visible {
 .quote-heading p {
   margin: 0 0 14px;
   font-family: var(--serif);
-  font-size: clamp(30px, 5vw, 58px);
+  font-size: clamp(28px, 4.6vw, 54px);
   line-height: 1.08;
 }
 
@@ -1166,6 +1166,42 @@ summary:focus-visible {
 .favorite-button.active {
   color: var(--gold);
   border-color: #5c5033;
+}
+
+/* Sello hanko como icono de favorito (libros): apagado = tinta tenue, activo = rojo */
+.favorite-seal {
+  display: inline-grid;
+  place-items: center;
+  line-height: 0;
+}
+
+.favorite-seal .hanko {
+  --hanko-size: 24px;
+  color: var(--muted);
+  opacity: .55;
+  filter: none;
+  transition: color .15s ease, opacity .15s ease;
+}
+
+.favorite-toggle .favorite-seal .hanko {
+  --hanko-size: 22px;
+}
+
+.favorite-button:not(:disabled):hover .favorite-seal .hanko,
+.favorite-toggle:not(:disabled):hover .favorite-seal .hanko {
+  color: var(--hanko);
+  opacity: .8;
+}
+
+.favorite-button.active .favorite-seal .hanko,
+.favorite-toggle.active .favorite-seal .hanko {
+  color: var(--hanko);
+  opacity: 1;
+}
+
+.favorite-button.active,
+.favorite-toggle.active {
+  border-color: color-mix(in srgb, var(--hanko) 55%, transparent);
 }
 
 .sort-field select {
@@ -2645,8 +2681,7 @@ textarea::placeholder {
 }
 
 .favorite-toggle.active {
-  color: var(--gold);
-  border-color: #5c5033;
+  color: var(--ink);
 }
 
 .detail-facts {
@@ -2923,7 +2958,8 @@ textarea::placeholder {
     min-height: var(--nav-mobile-h);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    padding: 6px max(8px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px, env(safe-area-inset-left));
+    column-gap: 8px;
+    padding: 6px max(14px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(14px, env(safe-area-inset-left));
     border-top: 1px solid rgba(255,255,255,.12);
     background: rgba(11,12,12,.94);
     backdrop-filter: blur(18px);
@@ -3001,7 +3037,7 @@ textarea::placeholder {
   }
 
   .quote-heading p {
-    font-size: 32px;
+    font-size: 29px;
   }
 
   .heading-note {

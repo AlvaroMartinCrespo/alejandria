@@ -65,7 +65,7 @@ export default function BookDetailPage() {
               <button key={next} className="button secondary compact" disabled={!editing} onClick={() => void saveStatus(next)}>{label}</button>
             ))}
             <button className={`button secondary compact favorite-toggle${book.favorite ? " active" : ""}`} disabled={!editing} onClick={() => void status.track("favorite", () => toggleFavorite(book.$id))}>
-              <span aria-hidden="true">{book.favorite ? "★" : "☆"}</span>{book.favorite ? "Quitar favorito" : "Favorito"}
+              <span className="favorite-seal" aria-hidden="true"><Hanko kind="favorite" size="sm" label="" /></span>{book.favorite ? "Quitar favorito" : "Favorito"}
             </button>
             <SaveIndicator state={status.stateOf("favorite")} />
             <SaveIndicator state={status.stateOf("status")} />

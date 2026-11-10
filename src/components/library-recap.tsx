@@ -7,6 +7,8 @@ import { YearFold } from "@/components/year-fold";
 import { MAX_RATING } from "@/lib/rating";
 import {
   PAGES_PER_HOUR,
+  authorHref,
+  booksByAuthor,
   computeRecap,
   daysInPeriod,
   formatDays,
@@ -28,6 +30,29 @@ function BookLink({ book }: { book: Book }) {
   return <Link href={`/libro/${book.$id}`}>{book.title}</Link>;
 }
 
+/** Autor del recap: enlaza a su vista con todos los libros leídos. */
+function AuthorLink({ author }: { author: string }) {
+  return <Link href={authorHref(author)}>{author}</Link>;
+}
+
+/** Hasta tres libros del autor como enlaces; el resto se resume en «y N más» (que lleva a la vista del autor). */
+function AuthorBooks({ author, books }: { author: string; books: Book[] }) {
+  const MAX_SHOWN = 3;
+  const shown = books.slice(0, MAX_SHOWN);
+  const rest = books.length - shown.length;
+  return (
+    <>
+      {shown.map((book, index) => (
+        <span key={book.$id}>
+          {index > 0 && ", "}
+          <BookLink book={book} />
+        </span>
+      ))}
+      {rest > 0 && <> y <Link href={authorHref(author)}>{plural(rest, "más", "más")}</Link></>}
+    </>
+  );
+}
+
 function pagesOf(book: Book) {
   return `${(book.pageCount ?? 0).toLocaleString("es")} págs.`;
 }
@@ -44,7 +69,7 @@ function ratedBooks(books: Book[], rating: number | null) {
 }
 
 /** Hechos curiosos comunes a un año y al total. */
-function commonFacts(stats: RecapStats): Fact[] {
+function commonFacts(stats: RecapStats, books: Book[]): Fact[] {
   const facts: Fact[] = [];
 
   if (stats.longest) {
@@ -64,7 +89,14 @@ function commonFacts(stats: RecapStats): Fact[] {
     facts.push({
       label: "Autores",
       content: total > 1
-        ? <>{author}<em> · {plural(total, "libro", "libros")} · {plural(stats.distinctAuthors, "autor distinto", "autores distintos")}</em></>
+        ? (
+          <>
+            <AuthorLink author={author} />
+            <em> · {plural(total, "libro", "libros")}: </em>
+            <AuthorBooks author={author} books={booksByAuthor(books, author)} />
+            <em> · {plural(stats.distinctAuthors, "autor distinto", "autores distintos")}</em>
+          </>
+        )
         : <>{plural(stats.distinctAuthors, "autor distinto", "autores distintos")}<em> · ninguno repetido</em></>,
     });
   }
@@ -159,7 +191,7 @@ function yearFacts(year: number, stats: RecapStats, previous: { year: number; st
     });
   }
 
-  return [...facts, ...monthFacts(year, books), ...commonFacts(stats)];
+  return [...facts, ...monthFacts(year, books), ...commonFacts(stats, books)];
 }
 
 function FactList({ facts }: { facts: Fact[] }) {
@@ -215,7 +247,7 @@ function YearRecap({ year, books, stats, previous }: { year: number | null; book
   const extra = period
     ? { label: "Ritmo", value: `${Math.max(1, Math.round(period / stats.count))} días`, note: "por libro, de media" }
     : { label: "Autores", value: stats.distinctAuthors.toLocaleString("es"), note: "distintos" };
-  const facts = year ? yearFacts(year, stats, previous, books) : commonFacts(stats);
+  const facts = year ? yearFacts(year, stats, previous, books) : commonFacts(stats, books);
   return (
     <div className="recap-panel">
       <StatCards stats={stats} extra={extra} />
@@ -269,7 +301,7 @@ function totalFacts(books: Book[], stats: RecapStats): Fact[] {
     }
   }
 
-  const common = commonFacts(stats);
+  const common = commonFacts(stats, books);
   const withoutYearNote = withoutYear.length
     ? [{ label: "Sin año", content: <>{plural(withoutYear.length, "libro", "libros")}<em> · cuentan en el total, pero no en ningún año</em></> }]
     : [];

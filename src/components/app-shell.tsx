@@ -77,7 +77,7 @@ function ShellContent({ children }: { children: ReactNode }) {
     { href: "/", icon: House, label: "Inicio" },
     { href: "/leidos", icon: BookCheck, label: "Leídos" },
     { href: "/anime", icon: Tv, label: "Anime" },
-    { href: "/estadisticas", icon: BarChart3, label: "Estadísticas" },
+    { href: "/estadisticas", icon: BarChart3, label: "Stats" },
   ];
   const isActive = (href: string) => (href === "/anime" ? onAnime : pathname === href);
 
@@ -124,7 +124,7 @@ function ShellContent({ children }: { children: ReactNode }) {
           <Plus size={22} aria-hidden="true" /><small>Añadir</small>
         </button>
         <Link href="/estadisticas" className={pathname === "/estadisticas" ? "active" : ""}>
-          <BarChart3 size={20} aria-hidden="true" /><small>Estadísticas</small>
+          <BarChart3 size={20} aria-hidden="true" /><small>Stats</small>
         </Link>
       </nav>
       <footer className="app-footer">
