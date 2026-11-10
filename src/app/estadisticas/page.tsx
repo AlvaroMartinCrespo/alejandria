@@ -7,7 +7,6 @@ import { Download, FileText, Upload } from "lucide-react";
 import { LibraryStatusChart, MonthlyReadingChart, RatingChart } from "@/components/library-charts";
 import { LibraryAuthors } from "@/components/library-authors";
 import { LibraryRecap } from "@/components/library-recap";
-import { BookRow } from "@/components/book-row";
 import { BookCover } from "@/components/book-cover";
 import { YearFold } from "@/components/year-fold";
 import { useAnime } from "@/components/anime-provider";
@@ -16,7 +15,7 @@ import { animeEpisodesWatched } from "@/lib/anime-utils";
 import { parseAnimeBackup } from "@/lib/anime-validation";
 import { buildLibraryBackup, downloadJson } from "@/lib/backup";
 import { MAX_RATING, RATING_VALUES_DESC } from "@/lib/rating";
-import { MONTH_NAMES, MONTH_SHORT, countByMonth, plural } from "@/lib/recap";
+import { MONTH_NAMES, MONTH_SHORT, countByMonth, groupByYear, plural } from "@/lib/recap";
 import type { Book } from "@/types/book";
 
 type Tab = "resumen" | "recap" | "autores" | "favoritos" | "valoraciones";
@@ -30,9 +29,15 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 const FAVORITES_FOLD_KEY = "alejandria-open-favorite-years-v1";
+const RATINGS_FOLD_KEY = "alejandria-open-rating-years-v1";
 
-/** Tarjeta simplificada de solo lectura: título, autor, valoración y páginas. */
-function FavoriteCard({ book }: { book: Book }) {
+/**
+ * Tarjeta simplificada de solo lectura.
+ * - "favorite": título, autor, valoración y páginas.
+ * - "rated" (pestaña Valoraciones): solo título, año de lectura y páginas; la nota
+ *   ya la indica el grupo de estrellas en el que aparece.
+ */
+function BookSummaryCard({ book, variant = "favorite" }: { book: Book; variant?: "favorite" | "rated" }) {
   return (
     <article className="book-row favorite-card">
       <Link href={`/libro/${book.$id}`} className="row-cover" aria-label={`Abrir ${book.title}`}>
@@ -40,13 +45,35 @@ function FavoriteCard({ book }: { book: Book }) {
       </Link>
       <div className="book-row-copy">
         <Link href={`/libro/${book.$id}`} className="book-title-link">{book.title}</Link>
-        <p>{book.authors.join(", ") || "Autor desconocido"}</p>
+        {variant === "favorite" && <p>{book.authors.join(", ") || "Autor desconocido"}</p>}
         <div className="book-meta-inline">
-          {book.rating !== null && <span className="rating" aria-label={`${book.rating} de ${MAX_RATING} estrellas`}>★ {book.rating}/{MAX_RATING}</span>}
+          {variant === "rated" && <span>{book.finishedYear ? `Leído en ${book.finishedYear}` : "Sin año de lectura"}</span>}
+          {variant === "favorite" && book.rating !== null && <span className="rating" aria-label={`${book.rating} de ${MAX_RATING} estrellas`}>★ {book.rating}/{MAX_RATING}</span>}
           {book.pageCount && <span>{book.pageCount} págs.</span>}
         </div>
       </div>
     </article>
+  );
+}
+
+/** Libros de un periodo agrupados por puntuación, de 10 a 1 estrellas (solo las que tienen libros). */
+function RatingGroups({ books }: { books: Book[] }) {
+  return (
+    <div className="rating-groups">
+      {RATING_VALUES_DESC.map((rating) => {
+        const list = books.filter((book) => book.rating === rating).sort(sortByFinishedDesc);
+        if (!list.length) return null;
+        return (
+          <section className="rating-group" key={rating}>
+            <div className="rating-marker" aria-label={`${rating} de ${MAX_RATING} estrellas`}>
+              <strong aria-hidden="true">★ {rating}<em>/ {MAX_RATING}</em></strong>
+              <span>{list.length} libro{list.length === 1 ? "" : "s"}</span>
+            </div>
+            <div>{list.map((book) => <BookSummaryCard key={book.$id} book={book} variant="rated" />)}</div>
+          </section>
+        );
+      })}
+    </div>
   );
 }
 
@@ -65,6 +92,13 @@ function Statistics() {
   const { anime, animeError, restoreAnime } = useAnime();
   const initialTab = useSearchParams().get("tab");
   const [tab, setTab] = useState<Tab>(TABS.some((item) => item.id === initialTab) ? (initialTab as Tab) : "resumen");
+
+  // La pestaña activa se refleja en la URL (?tab=…) sin añadir entradas al historial:
+  // así, al volver desde la ficha de un libro o de un autor, se recupera la misma pestaña.
+  function selectTab(next: Tab) {
+    setTab(next);
+    window.history.replaceState(null, "", `?tab=${next}`);
+  }
 
   // `completed` = todos los libros leídos (histórico). Lo usan Recap, Favoritos y Valoraciones.
   // Resumen, en cambio, solo muestra el año actual (`completedThisYear`).
@@ -102,10 +136,10 @@ function Statistics() {
     return favorites.filter((book) => book.finishedYear === year);
   }
 
-  // Valoraciones: libros leídos agrupados por puntuación, de 10 a 1 estrellas.
-  function booksForRating(rating: number) {
-    return completed.filter((book) => book.rating === rating).sort(sortByFinishedDesc);
-  }
+  // Valoraciones: libros leídos con nota, agrupados por año de lectura (y, dentro, por estrellas).
+  const { byYear: ratedByYear, withoutYear: ratedWithoutYear } = groupByYear(completed.filter((book) => book.rating !== null));
+  const ratedYears = [...ratedByYear.keys()].sort((a, b) => b - a);
+  const ratedCount = (list: Book[]) => `${list.length} valorado${list.length === 1 ? "" : "s"}`;
 
   // Anime vistos este año (sección final de Resumen).
   const animeYear = currentYear;
@@ -161,7 +195,7 @@ function Statistics() {
             role="tab"
             aria-selected={tab === item.id}
             className={`stats-tab${tab === item.id ? " active" : ""}`}
-            onClick={() => setTab(item.id)}
+            onClick={() => selectTab(item.id)}
           >
             {item.label}
           </button>
@@ -229,13 +263,13 @@ function Statistics() {
                 const list = favoritesForYear(year);
                 return (
                   <YearFold key={year} storageKey={FAVORITES_FOLD_KEY} id={String(year)} title={String(year)} count={`${list.length} favorito${list.length === 1 ? "" : "s"}`}>
-                    {list.map((book) => <FavoriteCard key={book.$id} book={book} />)}
+                    {list.map((book) => <BookSummaryCard key={book.$id} book={book} />)}
                   </YearFold>
                 );
               })}
               {favoritesWithoutYear.length > 0 && (
                 <YearFold storageKey={FAVORITES_FOLD_KEY} id="sin-anio" title="—" count={`Sin año · ${favoritesWithoutYear.length}`}>
-                  {favoritesWithoutYear.map((book) => <FavoriteCard key={book.$id} book={book} />)}
+                  {favoritesWithoutYear.map((book) => <BookSummaryCard key={book.$id} book={book} />)}
                 </YearFold>
               )}
             </div>
@@ -244,21 +278,25 @@ function Statistics() {
       )}
 
       {tab === "valoraciones" && (
-        <section className="rating-groups">
-          {RATING_VALUES_DESC.map((rating) => {
-            const list = booksForRating(rating);
-            return (
-              <section className="rating-group" key={rating}>
-                <div className="rating-marker" aria-label={`${rating} de ${MAX_RATING} estrellas`}>
-                  <strong aria-hidden="true">★ {rating}<em>/ {MAX_RATING}</em></strong>
-                  <span>{list.length} libro{list.length === 1 ? "" : "s"}</span>
-                </div>
-                {list.length
-                  ? <div>{list.map((book) => <BookRow key={book.$id} book={book} />)}</div>
-                  : <div className="big-empty compact"><p>Todavía no hay libros valorados con {rating} estrella{rating === 1 ? "" : "s"}.</p></div>}
-              </section>
-            );
-          })}
+        <section className="favorites-panel">
+          <div className="section-title"><div><p className="eyebrow">Año a año</p><h2>Valoraciones por año</h2></div></div>
+          {ratedYears.length || ratedWithoutYear.length ? (
+            <div className="year-groups">
+              {ratedYears.map((year) => {
+                const list = ratedByYear.get(year) ?? [];
+                return (
+                  <YearFold key={year} storageKey={RATINGS_FOLD_KEY} id={String(year)} title={String(year)} count={ratedCount(list)}>
+                    <RatingGroups books={list} />
+                  </YearFold>
+                );
+              })}
+              {ratedWithoutYear.length > 0 && (
+                <YearFold storageKey={RATINGS_FOLD_KEY} id="sin-anio" title="—" count={`Sin año · ${ratedCount(ratedWithoutYear)}`}>
+                  <RatingGroups books={ratedWithoutYear} />
+                </YearFold>
+              )}
+            </div>
+          ) : <div className="big-empty compact"><p>Cuando puntúes tus lecturas, se agruparán aquí por año.</p></div>}
         </section>
       )}
 

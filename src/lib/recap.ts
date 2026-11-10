@@ -133,6 +133,17 @@ export function countAuthors(books: Book[]): [string, number][] {
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es"));
 }
 
+/** Libros de una lista escritos por un autor (mismo criterio de nombre que `countAuthors`). */
+export function booksByAuthor(books: Book[], author: string): Book[] {
+  const target = author.trim();
+  return books.filter((book) => book.authors.some((name) => name.trim() === target));
+}
+
+/** Ruta de la vista con los libros leídos de un autor. */
+export function authorHref(author: string) {
+  return `/autor/${encodeURIComponent(author.trim())}`;
+}
+
 /** Agrupa libros por año de lectura. Los que no tienen año quedan aparte. */
 export function groupByYear(books: Book[]) {
   const byYear = new Map<number, Book[]>();

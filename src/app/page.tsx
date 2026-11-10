@@ -209,11 +209,13 @@ export default function Home() {
               ? <ol className="recent-list">
                   {recentlyAdded.map((book) => (
                     <li key={book.$id}>
-                      <BookCover title={book.title} url={book.coverUrl} />
-                      <div className="recent-copy">
-                        <strong>{book.title}</strong>
-                        <span>{book.authors.join(", ") || "Autor desconocido"}</span>
-                      </div>
+                      <Link href={`/libro/${book.$id}`} className="recent-link" aria-label={`Abrir ${book.title}`}>
+                        <BookCover title={book.title} url={book.coverUrl} />
+                        <div className="recent-copy">
+                          <strong>{book.title}</strong>
+                          <span>{book.authors.join(", ") || "Autor desconocido"}</span>
+                        </div>
+                      </Link>
                     </li>
                   ))}
                 </ol>

@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { YearFold } from "@/components/year-fold";
-import { countAuthors, groupByYear, plural } from "@/lib/recap";
+import { authorHref, countAuthors, groupByYear, plural } from "@/lib/recap";
 import type { Book } from "@/types/book";
 
 const AUTHORS_FOLD_KEY = "alejandria-open-author-years-v1";
@@ -11,8 +12,10 @@ function AuthorList({ authors }: { authors: [string, number][] }) {
     <ul className="author-list">
       {authors.map(([name, total]) => (
         <li key={name}>
-          <span>{name}</span>
-          <em>{plural(total, "libro", "libros")}</em>
+          <Link href={authorHref(name)} aria-label={`Ver los libros leídos de ${name}`}>
+            <span>{name}</span>
+            <em>{plural(total, "libro", "libros")}</em>
+          </Link>
         </li>
       ))}
     </ul>
