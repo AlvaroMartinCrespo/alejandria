@@ -7,6 +7,7 @@ import { Download, FileText, Upload } from "lucide-react";
 import { LibraryStatusChart, MonthlyReadingChart, RatingChart } from "@/components/library-charts";
 import { LibraryAuthors } from "@/components/library-authors";
 import { LibraryRecap } from "@/components/library-recap";
+import { ReadingCalendar } from "@/components/reading-calendar";
 import { BookCover } from "@/components/book-cover";
 import { YearFold } from "@/components/year-fold";
 import { useAnime } from "@/components/anime-provider";
@@ -18,10 +19,11 @@ import { MAX_RATING, RATING_VALUES_DESC } from "@/lib/rating";
 import { MONTH_NAMES, MONTH_SHORT, countByMonth, groupByYear, plural } from "@/lib/recap";
 import type { Book } from "@/types/book";
 
-type Tab = "resumen" | "recap" | "autores" | "favoritos" | "valoraciones";
+type Tab = "resumen" | "calendario" | "recap" | "autores" | "favoritos" | "valoraciones";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "resumen", label: "Resumen" },
+  { id: "calendario", label: "Calendario" },
   { id: "recap", label: "Recap" },
   { id: "autores", label: "Autores" },
   { id: "favoritos", label: "Favoritos" },
@@ -88,7 +90,7 @@ export default function StatisticsPage() {
 }
 
 function Statistics() {
-  const { books, collections, editing, restoreBackup } = useLibrary();
+  const { books, collections, activity, editing, restoreBackup } = useLibrary();
   const { anime, animeError, restoreAnime } = useAnime();
   const initialTab = useSearchParams().get("tab");
   const [tab, setTab] = useState<Tab>(TABS.some((item) => item.id === initialTab) ? (initialTab as Tab) : "resumen");
@@ -153,7 +155,7 @@ function Statistics() {
       return;
     }
     downloadJson(
-      buildLibraryBackup({ books, collections, anime }),
+      buildLibraryBackup({ books, collections, anime, activity }),
       `alejandria-${new Date().toISOString().slice(0, 10)}.json`,
     );
   }
@@ -249,6 +251,8 @@ function Statistics() {
           )}
         </>
       )}
+
+      {tab === "calendario" && <ReadingCalendar books={books} activity={activity} />}
 
       {tab === "recap" && <LibraryRecap books={completed} />}
 

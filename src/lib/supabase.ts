@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { ReadingEvent, ReadingLogEntry } from "@/types/activity";
 import type { Anime } from "@/types/anime";
 import type { Book, Collection, GoogleBookResult } from "@/types/book";
 
@@ -543,4 +544,105 @@ export async function importAnime(incoming: Anime[]) {
 /** Falla si la tabla `anime` aún no existe (migración sin aplicar). */
 export async function checkAnimeTable() {
   await request<Array<Pick<AnimeRow, "id">>>("anime?select=id&limit=1");
+}
+
+
+/* ===== CALENDARIO DE LECTURA ===== */
+
+const READING_LOG_COLUMNS = "id,book_id,day,events,progress_from,progress_to";
+
+type ReadingLogRow = {
+  id: string;
+  book_id: string;
+  day: string;
+  events: ReadingEvent[];
+  progress_from: number | null;
+  progress_to: number | null;
+};
+
+function fromReadingLogRow(row: ReadingLogRow): ReadingLogEntry {
+  return {
+    $id: row.id,
+    bookId: row.book_id,
+    day: row.day,
+    events: row.events,
+    progressFrom: row.progress_from,
+    progressTo: row.progress_to,
+  };
+}
+
+/** Estado y progreso actuales de un libro (el valor *anterior* al cambio que se va a guardar). */
+export async function getBookState(id: string) {
+  const rows = await request<Array<Pick<BookRow, "status" | "progress">>>(
+    `books?id=eq.${encodeURIComponent(id)}&select=status,progress&limit=1`,
+  );
+  return rows[0] ?? null;
+}
+
+/** Inserta o fusiona la actividad de un libro en un día (función SQL `log_reading_activity`). */
+export async function logReadingActivity(input: {
+  bookId: string;
+  day: string;
+  events: ReadingEvent[];
+  from: number;
+  to: number;
+}) {
+  for (const event of input.events) {
+    await request<void>("rpc/log_reading_activity", {
+      method: "POST",
+      body: JSON.stringify({
+        p_book_id: input.bookId,
+        p_day: input.day,
+        p_event: event,
+        p_from: input.from,
+        p_to: input.to,
+      }),
+    });
+  }
+}
+
+export async function listReadingLog(range: { from?: string; to?: string } = {}) {
+  const filters = [
+    range.from ? `&day=gte.${encodeURIComponent(range.from)}` : "",
+    range.to ? `&day=lte.${encodeURIComponent(range.to)}` : "",
+  ].join("");
+  const pageSize = 1000;
+  const entries: ReadingLogEntry[] = [];
+
+  for (let offset = 0; ; offset += pageSize) {
+    const rows = await request<ReadingLogRow[]>(
+      `reading_log?select=${READING_LOG_COLUMNS}&order=day.desc,id.asc${filters}&offset=${offset}&limit=${pageSize}`,
+    );
+    entries.push(...rows.map(fromReadingLogRow));
+    if (rows.length < pageSize) return entries;
+  }
+}
+
+/** Restaura el historial: upsert por (book_id, day). Ignora libros que no existen y nunca borra. */
+export async function importReadingLog(incoming: ReadingLogEntry[]) {
+  if (!incoming.length) return 0;
+  const bookIds = new Set((await listBooks()).map((book) => book.$id));
+  const rows = incoming
+    .filter((entry) => bookIds.has(entry.bookId))
+    .map((entry) => ({
+      book_id: entry.bookId,
+      day: entry.day,
+      events: entry.events,
+      progress_from: entry.progressFrom,
+      progress_to: entry.progressTo,
+    }));
+
+  for (let offset = 0; offset < rows.length; offset += 500) {
+    await request<void>("reading_log?on_conflict=book_id,day", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify(rows.slice(offset, offset + 500)),
+    });
+  }
+  return rows.length;
+}
+
+/** Falla si la tabla `reading_log` aún no existe (migración sin aplicar). */
+export async function checkReadingLogTable() {
+  await request<Array<Pick<ReadingLogRow, "id">>>("reading_log?select=id&limit=1");
 }

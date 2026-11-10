@@ -51,6 +51,17 @@ Rutas nuevas: `/anime`, `/anime/[id]`, `/anime/estadisticas`, `/api/anime`, `/ap
 
 Desde la versión con anime, **JSON** exporta copias `version: 3` que incluyen `anime`. La restauración acepta copias v1, v2 y v3 (también las que solo traen anime) y siempre mezcla: nunca borra datos existentes. El PDF de **/exportar** incluye los grupos de anime debajo de los libros.
 
+## 4 ter. Migración del calendario de lectura (instalaciones existentes)
+
+Antes de desplegar la pestaña **Estadísticas → Calendario**, pega `supabase/migration-reading-log.sql` en **Supabase → SQL Editor → Run**. Es aditiva e idempotente: crea la tabla `reading_log` y la función `log_reading_activity` sin tocar el resto. Sin la migración los libros siguen funcionando (el servidor ignora el fallo al registrar) y `/api/health` devuelve `readingLog: "missing"`.
+
+- Variable opcional `ALEJANDRIA_TIMEZONE` (por defecto `Europe/Madrid`): decide a qué día pertenece cada lectura, porque Vercel corre en UTC.
+- Cuenta como lectura: cambiar el progreso y cambiar el estado (*Leyendo*, *Leído*, etc.). Notas, valoración y favorito no cuentan (constante `COUNT_METADATA_AS_ACTIVITY` en `src/lib/reading-activity.ts`).
+- El historial empieza el día de la migración; las lecturas anteriores no tienen fecha exacta.
+- Rutas nuevas: `GET /api/activity` y `POST /api/activity/import` (esta exige sesión de edición).
+- **JSON** exporta ahora copias `version: 4` con `activity`. La restauración sigue aceptando v1-v3 (sin historial) y siempre mezcla.
+- Pruebas de la lógica pura: `npm test`.
+
 ## 5. Importar la copia
 
 Despliega la aplicación, abre **Estadísticas → Restaurar** y selecciona el JSON descargado de Appwrite. La operación conserva los IDs y fechas originales, actualiza coincidencias y no duplica libros con el mismo ID de Google Books.

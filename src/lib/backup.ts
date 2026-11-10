@@ -1,21 +1,23 @@
+import type { ReadingLogEntry } from "@/types/activity";
 import type { Anime } from "@/types/anime";
 import type { Book, Collection, LibraryBackup } from "@/types/book";
 
-/** Versión actual del formato. Las copias v1/v2 (solo libros) siguen siendo importables. */
-export const BACKUP_VERSION = 3;
+/** Versión actual del formato. Las copias v1-v3 (sin historial de lectura) siguen siendo importables. */
+export const BACKUP_VERSION = 4;
 
 interface BackupSource {
   books: Book[];
   collections: Collection[];
   anime: Anime[];
+  activity: ReadingLogEntry[];
 }
 
 /**
  * Copia completa de todos los datos persistentes: libros, carpetas (relación
- * `collectionId` de cada libro) y animes con todos sus campos, orden incluido.
+ * `collectionId` de cada libro), historial de lectura y animes con todos sus campos, orden incluido.
  * Misma estructura que lee `parseBookBackup` / `parseAnimeBackup`.
  */
-export function buildLibraryBackup({ books, collections, anime }: BackupSource): LibraryBackup {
+export function buildLibraryBackup({ books, collections, anime, activity }: BackupSource): LibraryBackup {
   return {
     format: "alejandria-library-backup",
     version: BACKUP_VERSION,
@@ -23,9 +25,11 @@ export function buildLibraryBackup({ books, collections, anime }: BackupSource):
     bookCount: books.length,
     collectionCount: collections.length,
     animeCount: anime.length,
+    activityCount: activity.length,
     books,
     collections,
     anime,
+    activity,
   };
 }
 

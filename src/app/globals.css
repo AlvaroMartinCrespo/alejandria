@@ -4971,3 +4971,262 @@ svg.lucide:not([stroke-width="3"]) {
     animation: none;
   }
 }
+
+/* ---- Calendario de lectura ---- */
+.reading-calendar {
+  display: grid;
+  gap: 22px;
+  max-width: 760px;
+}
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-head h3 {
+  flex: 1;
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.calendar-nav {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  cursor: pointer;
+}
+
+.calendar-nav:hover {
+  border-color: var(--acid);
+  color: var(--acid);
+}
+
+.calendar-today {
+  min-height: 40px;
+}
+
+.calendar-grid {
+  display: grid;
+  gap: 6px;
+}
+
+.calendar-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.calendar-weekdays > div {
+  padding: 4px 0;
+  color: var(--subtle);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-align: center;
+}
+
+.calendar-cell {
+  min-width: 0;
+}
+
+.calendar-day {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  min-height: 44px;
+  padding: 6px;
+  color: var(--muted);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--panel);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+
+.calendar-day:hover {
+  border-color: var(--line);
+  background: var(--raised);
+}
+
+.calendar-day[data-level="1"] { background: color-mix(in srgb, var(--acid) 16%, var(--panel)); color: var(--ink); }
+.calendar-day[data-level="2"] { background: color-mix(in srgb, var(--acid) 32%, var(--panel)); color: var(--ink); }
+.calendar-day[data-level="3"] { background: color-mix(in srgb, var(--acid) 52%, var(--panel)); color: #0b0c0c; font-weight: 700; }
+
+.calendar-day[data-future] {
+  opacity: .55;
+}
+
+.calendar-day[data-today] {
+  border-color: var(--ink);
+}
+
+.calendar-day[aria-pressed="true"] {
+  border-color: var(--acid);
+  box-shadow: 0 0 0 2px var(--acid);
+}
+
+.calendar-day:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.calendar-date {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.calendar-seal {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  display: grid;
+  line-height: 0;
+  color: var(--hanko);
+}
+
+.calendar-seal .hanko {
+  --hanko-size: 20px;
+}
+
+.calendar-day[data-level="3"] .calendar-seal {
+  color: #7d1d10;
+}
+
+.calendar-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.calendar-summary > div {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.calendar-summary dt {
+  color: var(--subtle);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.calendar-summary dd {
+  margin: 6px 0 0;
+  font-family: var(--serif);
+  font-size: 22px;
+}
+
+.calendar-detail {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.calendar-detail h3 {
+  margin: 0 0 14px;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.calendar-detail h3 span {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.calendar-detail ul {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calendar-book {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.calendar-book-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.calendar-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.calendar-gain {
+  color: var(--acid);
+  font-size: 18px;
+}
+
+.calendar-gain small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.calendar-badge {
+  padding: 2px 9px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.calendar-badge.finished {
+  color: var(--hanko);
+  border-color: var(--hanko);
+}
+
+.calendar-empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+@media (max-width: 480px) {
+  .calendar-row,
+  .calendar-grid {
+    gap: 4px;
+  }
+
+  .calendar-day {
+    padding: 4px;
+  }
+
+  .calendar-date {
+    font-size: 12px;
+  }
+
+  .calendar-seal .hanko {
+    --hanko-size: 15px;
+  }
+
+  .calendar-head h3 {
+    font-size: 20px;
+  }
+}

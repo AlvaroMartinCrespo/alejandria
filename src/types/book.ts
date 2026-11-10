@@ -1,3 +1,4 @@
+import type { ReadingLogEntry } from "@/types/activity";
 import type { Anime } from "@/types/anime";
 
 /** Estados mutuamente excluyentes dentro del recorrido de lectura. */
@@ -36,16 +37,20 @@ export interface Collection {
 
 export interface LibraryBackup {
   format: "alejandria-library-backup";
-  version: 1 | 2 | 3;
+  version: 1 | 2 | 3 | 4;
   exportedAt: string;
   bookCount: number;
   /** Solo en copias v3 recientes; informativos, la restauración no depende de ellos. */
   collectionCount?: number;
   animeCount?: number;
+  /** Solo en copias v4; informativo. */
+  activityCount?: number;
   books: Book[];
   collections?: Collection[];
   /** Solo en copias v3. Las copias v1/v2 no lo traen. */
   anime?: Anime[];
+  /** Solo en copias v4: historial del calendario de lectura. */
+  activity?: ReadingLogEntry[];
 }
 
 /**

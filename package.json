@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "check:deploy": "node scripts/check-deployment.mjs"
+    "check:deploy": "node scripts/check-deployment.mjs",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-activity.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

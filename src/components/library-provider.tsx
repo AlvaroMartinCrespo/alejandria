@@ -6,15 +6,20 @@ import {
   useContext,
   useEffect,
   useEffectEvent,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { parseActivityBackup } from "@/lib/activity-validation";
 import { googleResultToBook, normalizeBook } from "@/lib/book-utils";
 import { parseBookBackup } from "@/lib/book-validation";
+import { applyIncoming, describeChange, todayInZone } from "@/lib/reading-activity";
+import type { ReadingLogEntry } from "@/types/activity";
 import type { Book, BookStatus, Collection, GoogleBookResult } from "@/types/book";
 
 const STORAGE_KEY = "alejandria-v1";
 const COLLECTIONS_STORAGE_KEY = "alejandria-collections-v1";
+const ACTIVITY_STORAGE_KEY = "alejandria-activity-v1";
 const LEGACY_STORAGE_KEY = "mi-biblioteca-v1";
 
 type BookChanges = Partial<Omit<Book, "$id" | "googleBooksId" | "addedAt">>;
@@ -22,6 +27,10 @@ type BookChanges = Partial<Omit<Book, "$id" | "googleBooksId" | "addedAt">>;
 interface LibraryContextValue {
   books: Book[];
   collections: Collection[];
+  /** Historial de lectura (una entrada por libro y día). */
+  activity: ReadingLogEntry[];
+  /** Vuelve a pedir el historial al servidor (en modo local no hace nada). */
+  refreshActivity: () => Promise<void>;
   loading: boolean;
   editing: boolean;
   editorChecked: boolean;
@@ -50,12 +59,20 @@ const LibraryContext = createContext<LibraryContextValue | null>(null);
 export function LibraryProvider({ children }: { children: ReactNode }) {
   const [books, setBooks] = useState<Book[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
+  const [activity, setActivity] = useState<ReadingLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  // Copia síncrona de `books`: el autosave dispara varios guardados seguidos y el
+  // cierre de `updateBook` podría ver un progreso anterior al real.
+  const booksRef = useRef<Book[]>([]);
   const [editing, setEditing] = useState(false);
   const [editorChecked, setEditorChecked] = useState(false);
   const [editorConfigured, setEditorConfigured] = useState(false);
   const [storageMode, setStorageMode] = useState<"supabase" | "local">("local");
   const [notice, setNotice] = useState<LibraryContextValue["notice"]>(null);
+
+  useEffect(() => {
+    booksRef.current = books;
+  }, [books]);
 
   function showNotice(type: "success" | "error", message: string) {
     setNotice({ type, message });
@@ -67,9 +84,12 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       const response = await fetch("/api/books", { cache: "no-store" });
       if (!response.ok) throw new Error("Supabase no está configurado");
       const data = (await response.json()) as { books: Book[]; collections: Collection[] };
+      // El historial es opcional: si falta la migración, la app sigue funcionando.
+      const entries = await fetchActivity();
       startTransition(() => {
         setBooks(data.books.map(normalizeBook));
         setCollections(data.collections);
+        setActivity(entries ?? []);
         setStorageMode("supabase");
         setLoading(false);
       });
@@ -94,15 +114,42 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
           showNotice("error", "Las carpetas locales estaban dañadas y se han reiniciado.");
         }
       }
+      let localActivity: ReadingLogEntry[] = [];
+      const storedActivity = window.localStorage.getItem(ACTIVITY_STORAGE_KEY);
+      if (storedActivity) {
+        try {
+          localActivity = parseActivityBackup(JSON.parse(storedActivity));
+        } catch {
+          window.localStorage.removeItem(ACTIVITY_STORAGE_KEY);
+          showNotice("error", "El historial de lectura local estaba dañado y se ha reiniciado.");
+        }
+      }
       startTransition(() => {
         setBooks(localBooks);
         setCollections(localCollections);
+        setActivity(localActivity);
         setStorageMode("local");
         setLoading(false);
       });
       if (stored) window.localStorage.removeItem(LEGACY_STORAGE_KEY);
     }
   });
+
+  async function fetchActivity(): Promise<ReadingLogEntry[] | null> {
+    try {
+      const response = await fetch("/api/activity", { cache: "no-store" });
+      if (!response.ok) return null;
+      return ((await response.json()) as { entries: ReadingLogEntry[] }).entries;
+    } catch {
+      return null;
+    }
+  }
+
+  async function refreshActivity() {
+    if (storageMode !== "supabase") return;
+    const entries = await fetchActivity();
+    if (entries) setActivity(entries);
+  }
 
   const loadEditorSession = useEffectEvent(async () => {
     try {
@@ -135,6 +182,12 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     }
   }, [collections, loading, storageMode]);
 
+  useEffect(() => {
+    if (!loading && storageMode === "local") {
+      window.localStorage.setItem(ACTIVITY_STORAGE_KEY, JSON.stringify(activity));
+    }
+  }, [activity, loading, storageMode]);
+
   async function addBook(result: GoogleBookResult) {
     requireEditing();
     if (books.some((book) => book.googleBooksId === result.googleBooksId)) {
@@ -162,10 +215,21 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
 
   async function updateBook(id: string, changes: BookChanges) {
     requireEditing();
-    const previous = books;
-    setBooks((current) =>
-      current.map((book) => (book.$id === id ? { ...book, ...changes } : book)),
-    );
+    const previous = booksRef.current;
+    const before = previous.find((book) => book.$id === id);
+    booksRef.current = previous.map((book) => (book.$id === id ? { ...book, ...changes } : book));
+    setBooks(booksRef.current);
+
+    // Mismo criterio que el servidor (`describeChange`): en modo local es la única fuente
+    // del historial; en modo Supabase es una actualización optimista que luego se refresca.
+    const change = before ? describeChange(before, changes) : null;
+    if (change) {
+      const day = todayInZone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+      setActivity((current) =>
+        applyIncoming(current, { bookId: id, day, events: change.events, progressFrom: change.from, progressTo: change.to }),
+      );
+    }
+
     if (storageMode === "supabase") {
       const response = await fetch(`/api/books/${id}`, {
         method: "PATCH",
@@ -173,7 +237,9 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(changes),
       });
       if (!response.ok) {
+        booksRef.current = previous;
         setBooks(previous);
+        void refreshActivity();
         showNotice("error", "No se pudo guardar el cambio. Se restauró el valor anterior.");
         throw new Error("No se pudo actualizar el libro.");
       }
@@ -201,11 +267,15 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   async function removeBook(id: string) {
     requireEditing();
     const previous = books;
+    const previousActivity = activity;
     setBooks((current) => current.filter((book) => book.$id !== id));
+    // El historial del libro desaparece con él (en Supabase lo hace `on delete cascade`).
+    setActivity((current) => current.filter((entry) => entry.bookId !== id));
     if (storageMode === "supabase") {
       const response = await fetch(`/api/books/${id}`, { method: "DELETE" });
       if (!response.ok) {
         setBooks(previous);
+        setActivity(previousActivity);
         showNotice("error", "No se pudo eliminar el libro.");
         throw new Error("No se pudo eliminar el libro.");
       }
@@ -325,6 +395,8 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   async function restoreBackup(value: unknown) {
     requireEditing();
     const imported = parseBookBackup(value);
+    // Las copias v1-v3 no traen historial: `importedActivity` queda vacío.
+    const importedActivity = parseActivityBackup(value);
     // Copia con solo anime: no hay nada que restaurar en libros.
     if (!imported.books.length && !imported.collections.length) return;
 
@@ -341,6 +413,13 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         imported.collections.forEach((collection) => merged.set(collection.$id, collection));
         return Array.from(merged.values());
       });
+      if (importedActivity.length) {
+        setActivity((current) => {
+          const merged = new Map(current.map((entry) => [`${entry.bookId}|${entry.day}`, entry]));
+          importedActivity.forEach((entry) => merged.set(`${entry.bookId}|${entry.day}`, entry));
+          return Array.from(merged.values());
+        });
+      }
       showNotice("success", `${imported.books.length} libros restaurados.`);
       return;
     }
@@ -352,10 +431,21 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ format: "alejandria-library-backup", version: 2, books: imported.books, collections: imported.collections }),
       });
       if (!importedResponse.ok) throw new Error();
+      // Va después de los libros: el historial depende de que existan.
+      if (importedActivity.length) {
+        const activityResponse = await fetch("/api/activity/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ activity: importedActivity }),
+        });
+        if (!activityResponse.ok) throw new Error();
+      }
       const refreshed = await fetch("/api/books", { cache: "no-store" });
       const data = (await refreshed.json()) as { books: Book[]; collections: Collection[] };
       setBooks(data.books.map(normalizeBook));
       setCollections(data.collections);
+      const entries = await fetchActivity();
+      if (entries) setActivity(entries);
       showNotice("success", `${imported.books.length} libros restaurados en Supabase.`);
     } catch {
       showNotice("error", "La restauración quedó incompleta. Revisa Supabase e inténtalo de nuevo.");
@@ -390,6 +480,8 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       value={{
         books,
         collections,
+        activity,
+        refreshActivity,
         loading,
         editing,
         editorChecked,

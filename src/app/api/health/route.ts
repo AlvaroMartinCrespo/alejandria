@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { checkAnimeTable, checkSupabase } from "@/lib/supabase";
+import { checkAnimeTable, checkReadingLogTable, checkSupabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -24,10 +24,12 @@ export async function GET() {
     await checkSupabase();
     // Informativo: la tabla de anime no afecta al estado global.
     const anime = await checkAnimeTable().then(() => "ok" as const, () => "missing" as const);
+    const readingLog = await checkReadingLogTable().then(() => "ok" as const, () => "missing" as const);
     return NextResponse.json({
       status: "ok",
       supabase: "connected",
       anime,
+      readingLog,
       googleBooksKey: Boolean(process.env.GOOGLE_BOOKS_API_KEY),
     });
   } catch {
