@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { parseActivityBackup } from "@/lib/activity-validation";
+import { parseActivityBackup, parseMarksBackup } from "@/lib/activity-validation";
 import { googleResultToBook, normalizeBook } from "@/lib/book-utils";
 import { parseBookBackup } from "@/lib/book-validation";
 import { applyIncoming, describeChange, todayInZone } from "@/lib/reading-activity";
@@ -20,6 +20,7 @@ import type { Book, BookStatus, Collection, GoogleBookResult } from "@/types/boo
 const STORAGE_KEY = "alejandria-v1";
 const COLLECTIONS_STORAGE_KEY = "alejandria-collections-v1";
 const ACTIVITY_STORAGE_KEY = "alejandria-activity-v1";
+const MARKS_STORAGE_KEY = "alejandria-marks-v1";
 const LEGACY_STORAGE_KEY = "mi-biblioteca-v1";
 
 type BookChanges = Partial<Omit<Book, "$id" | "googleBooksId" | "addedAt">>;
@@ -29,6 +30,10 @@ interface LibraryContextValue {
   collections: Collection[];
   /** Historial de lectura (una entrada por libro y día). */
   activity: ReadingLogEntry[];
+  /** Días marcados a mano como «he leído» (sin libro), YYYY-MM-DD. Cuentan para la racha. */
+  markedDays: string[];
+  markDays: (days: string[]) => Promise<void>;
+  unmarkDays: (days: string[]) => Promise<void>;
   /** Vuelve a pedir el historial al servidor (en modo local no hace nada). */
   refreshActivity: () => Promise<void>;
   loading: boolean;
@@ -60,6 +65,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const [books, setBooks] = useState<Book[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [activity, setActivity] = useState<ReadingLogEntry[]>([]);
+  const [markedDays, setMarkedDays] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   // Copia síncrona de `books`: el autosave dispara varios guardados seguidos y el
   // cierre de `updateBook` podría ver un progreso anterior al real.
@@ -85,11 +91,12 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       if (!response.ok) throw new Error("Supabase no está configurado");
       const data = (await response.json()) as { books: Book[]; collections: Collection[] };
       // El historial es opcional: si falta la migración, la app sigue funcionando.
-      const entries = await fetchActivity();
+      const history = await fetchActivity();
       startTransition(() => {
         setBooks(data.books.map(normalizeBook));
         setCollections(data.collections);
-        setActivity(entries ?? []);
+        setActivity(history?.entries ?? []);
+        setMarkedDays(history?.marks ?? []);
         setStorageMode("supabase");
         setLoading(false);
       });
@@ -124,10 +131,20 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
           showNotice("error", "El historial de lectura local estaba dañado y se ha reiniciado.");
         }
       }
+      let localMarks: string[] = [];
+      const storedMarks = window.localStorage.getItem(MARKS_STORAGE_KEY);
+      if (storedMarks) {
+        try {
+          localMarks = parseMarksBackup({ marks: JSON.parse(storedMarks) });
+        } catch {
+          window.localStorage.removeItem(MARKS_STORAGE_KEY);
+        }
+      }
       startTransition(() => {
         setBooks(localBooks);
         setCollections(localCollections);
         setActivity(localActivity);
+        setMarkedDays(localMarks);
         setStorageMode("local");
         setLoading(false);
       });
@@ -135,11 +152,12 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  async function fetchActivity(): Promise<ReadingLogEntry[] | null> {
+  async function fetchActivity(): Promise<{ entries: ReadingLogEntry[]; marks: string[] } | null> {
     try {
       const response = await fetch("/api/activity", { cache: "no-store" });
       if (!response.ok) return null;
-      return ((await response.json()) as { entries: ReadingLogEntry[] }).entries;
+      const data = (await response.json()) as { entries: ReadingLogEntry[]; marks?: string[] };
+      return { entries: data.entries, marks: data.marks ?? [] };
     } catch {
       return null;
     }
@@ -147,9 +165,33 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
 
   async function refreshActivity() {
     if (storageMode !== "supabase") return;
-    const entries = await fetchActivity();
-    if (entries) setActivity(entries);
+    const history = await fetchActivity();
+    if (history) {
+      setActivity(history.entries);
+      setMarkedDays(history.marks);
+    }
   }
+
+  async function changeMarks(add: string[], remove: string[]) {
+    requireEditing();
+    const previous = markedDays;
+    const removed = new Set(remove);
+    setMarkedDays((current) => Array.from(new Set([...current.filter((day) => !removed.has(day)), ...add])).sort());
+    if (storageMode !== "supabase") return;
+    const response = await fetch("/api/activity/marks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ add, remove }),
+    });
+    if (!response.ok) {
+      setMarkedDays(previous);
+      showNotice("error", "No se pudieron guardar los días. ¿Está aplicada la migración de días marcados?");
+      throw new Error("No se pudieron guardar los días.");
+    }
+  }
+
+  const markDays = (days: string[]) => changeMarks(days, []);
+  const unmarkDays = (days: string[]) => changeMarks([], days);
 
   const loadEditorSession = useEffectEvent(async () => {
     try {
@@ -187,6 +229,12 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       window.localStorage.setItem(ACTIVITY_STORAGE_KEY, JSON.stringify(activity));
     }
   }, [activity, loading, storageMode]);
+
+  useEffect(() => {
+    if (!loading && storageMode === "local") {
+      window.localStorage.setItem(MARKS_STORAGE_KEY, JSON.stringify(markedDays));
+    }
+  }, [markedDays, loading, storageMode]);
 
   async function addBook(result: GoogleBookResult) {
     requireEditing();
@@ -397,6 +445,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     const imported = parseBookBackup(value);
     // Las copias v1-v3 no traen historial: `importedActivity` queda vacío.
     const importedActivity = parseActivityBackup(value);
+    const importedMarks = parseMarksBackup(value);
     // Copia con solo anime: no hay nada que restaurar en libros.
     if (!imported.books.length && !imported.collections.length) return;
 
@@ -420,6 +469,9 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
           return Array.from(merged.values());
         });
       }
+      if (importedMarks.length) {
+        setMarkedDays((current) => Array.from(new Set([...current, ...importedMarks])).sort());
+      }
       showNotice("success", `${imported.books.length} libros restaurados.`);
       return;
     }
@@ -432,11 +484,11 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       });
       if (!importedResponse.ok) throw new Error();
       // Va después de los libros: el historial depende de que existan.
-      if (importedActivity.length) {
+      if (importedActivity.length || importedMarks.length) {
         const activityResponse = await fetch("/api/activity/import", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ activity: importedActivity }),
+          body: JSON.stringify({ activity: importedActivity, marks: importedMarks }),
         });
         if (!activityResponse.ok) throw new Error();
       }
@@ -444,8 +496,11 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       const data = (await refreshed.json()) as { books: Book[]; collections: Collection[] };
       setBooks(data.books.map(normalizeBook));
       setCollections(data.collections);
-      const entries = await fetchActivity();
-      if (entries) setActivity(entries);
+      const history = await fetchActivity();
+      if (history) {
+        setActivity(history.entries);
+        setMarkedDays(history.marks);
+      }
       showNotice("success", `${imported.books.length} libros restaurados en Supabase.`);
     } catch {
       showNotice("error", "La restauración quedó incompleta. Revisa Supabase e inténtalo de nuevo.");
@@ -481,6 +536,9 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         books,
         collections,
         activity,
+        markedDays,
+        markDays,
+        unmarkDays,
         refreshActivity,
         loading,
         editing,

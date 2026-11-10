@@ -59,3 +59,13 @@ export function parseActivityBackup(value: unknown): ReadingLogEntry[] {
   }
   return Array.from(unique.values());
 }
+
+/** Días marcados a mano de una copia (`{ marks: ["YYYY-MM-DD", …] }`). Las copias antiguas devuelven `[]`. */
+export function parseMarksBackup(value: unknown): string[] {
+  const source = typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>).marks
+    : undefined;
+  if (source === undefined || source === null) return [];
+  if (!Array.isArray(source)) throw new Error("Los días marcados de la copia no son válidos.");
+  return Array.from(new Set(source.map(validDay))).sort();
+}

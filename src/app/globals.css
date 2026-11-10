@@ -5230,3 +5230,65 @@ svg.lucide:not([stroke-width="3"]) {
     font-size: 20px;
   }
 }
+
+/* Días marcados a mano (sin libro) y racha de Kindle */
+.calendar-day[data-marked] {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--acid) 55%, var(--line));
+}
+
+.calendar-check {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  display: grid;
+  color: var(--acid);
+  line-height: 0;
+}
+
+.calendar-mark {
+  margin-top: 14px;
+}
+
+.calendar-kindle {
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.calendar-kindle summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.calendar-kindle p {
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
+.calendar-kindle-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.calendar-kindle-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--subtle);
+  font-size: 12px;
+}
+
+.calendar-kindle-form input {
+  width: 96px;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--canvas);
+  font: inherit;
+}

@@ -7,7 +7,7 @@ register("./alias-loader.mjs", import.meta.url);
 const {
   addDays, applyIncoming, describeChange, groupByDay, mergeEntry, progressDelta, streaks, todayInZone,
 } = await import("../src/lib/reading-activity.ts");
-const { parseActivityBackup } = await import("../src/lib/activity-validation.ts");
+const { parseActivityBackup, parseMarksBackup } = await import("../src/lib/activity-validation.ts");
 
 let n = 0;
 function test(name, fn) { fn(); n += 1; console.log(`ok  ${name}`); }
@@ -121,6 +121,21 @@ test("parseActivityBackup rechaza datos inválidos", () => {
   bad({ bookId: "a", day: "2026-11-10", events: ["x"], progressFrom: 0, progressTo: 0 });
   bad({ bookId: "a", day: "2026-11-10", events: [], progressFrom: 101, progressTo: 0 });
   assert.throws(() => parseActivityBackup({ activity: "no" }));
+});
+
+test("30 días marcados terminando hoy dan racha 30; si falta hoy, sigue viva desde ayer", () => {
+  const days = Array.from({ length: 30 }, (_, i) => addDays("2026-11-10", -i));
+  assert.deepEqual(streaks(days, "2026-11-10"), { current: 30, longest: 30 });
+  assert.deepEqual(streaks(days.slice(1), "2026-11-10"), { current: 29, longest: 29 });
+  // un hueco rompe la racha
+  assert.equal(streaks(days.filter((d) => d !== "2026-11-01"), "2026-11-10").current, 9);
+});
+
+test("parseMarksBackup", () => {
+  assert.deepEqual(parseMarksBackup({ books: [] }), []);
+  assert.deepEqual(parseMarksBackup({ marks: ["2026-11-02", "2026-11-01", "2026-11-02"] }), ["2026-11-01", "2026-11-02"]);
+  assert.throws(() => parseMarksBackup({ marks: ["2026-13-01"] }));
+  assert.throws(() => parseMarksBackup({ marks: "x" }));
 });
 
 console.log(`\n${n} pruebas correctas`);

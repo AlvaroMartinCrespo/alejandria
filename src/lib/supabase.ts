@@ -646,3 +646,28 @@ export async function importReadingLog(incoming: ReadingLogEntry[]) {
 export async function checkReadingLogTable() {
   await request<Array<Pick<ReadingLogRow, "id">>>("reading_log?select=id&limit=1");
 }
+
+/* ===== DÍAS MARCADOS A MANO ===== */
+
+export async function listReadingMarks() {
+  const rows = await request<Array<{ day: string }>>("reading_marks?select=day&order=day.asc&limit=5000");
+  return rows.map((row) => row.day);
+}
+
+/** Marca días (idempotente: los ya marcados se ignoran). */
+export async function addReadingMarks(days: string[]) {
+  if (!days.length) return;
+  await request<void>("reading_marks?on_conflict=day", {
+    method: "POST",
+    headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
+    body: JSON.stringify(days.map((day) => ({ day }))),
+  });
+}
+
+export async function removeReadingMarks(days: string[]) {
+  if (!days.length) return;
+  await request<void>(`reading_marks?day=in.(${days.map(encodeURIComponent).join(",")})`, {
+    method: "DELETE",
+    headers: { Prefer: "return=minimal" },
+  });
+}

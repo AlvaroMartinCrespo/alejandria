@@ -90,7 +90,7 @@ export default function StatisticsPage() {
 }
 
 function Statistics() {
-  const { books, collections, activity, editing, restoreBackup } = useLibrary();
+  const { books, collections, activity, markedDays, editing, restoreBackup } = useLibrary();
   const { anime, animeError, restoreAnime } = useAnime();
   const initialTab = useSearchParams().get("tab");
   const [tab, setTab] = useState<Tab>(TABS.some((item) => item.id === initialTab) ? (initialTab as Tab) : "resumen");
@@ -155,7 +155,7 @@ function Statistics() {
       return;
     }
     downloadJson(
-      buildLibraryBackup({ books, collections, anime, activity }),
+      buildLibraryBackup({ books, collections, anime, activity, marks: markedDays }),
       `alejandria-${new Date().toISOString().slice(0, 10)}.json`,
     );
   }

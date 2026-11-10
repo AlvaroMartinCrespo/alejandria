@@ -58,8 +58,9 @@ Antes de desplegar la pestaña **Estadísticas → Calendario**, pega `supabase/
 - Variable opcional `ALEJANDRIA_TIMEZONE` (por defecto `Europe/Madrid`): decide a qué día pertenece cada lectura, porque Vercel corre en UTC.
 - Cuenta como lectura: cambiar el progreso y cambiar el estado (*Leyendo*, *Leído*, etc.). Notas, valoración y favorito no cuentan (constante `COUNT_METADATA_AS_ACTIVITY` en `src/lib/reading-activity.ts`).
 - El historial empieza el día de la migración; las lecturas anteriores no tienen fecha exacta.
-- Rutas nuevas: `GET /api/activity` y `POST /api/activity/import` (esta exige sesión de edición).
 - **JSON** exporta ahora copias `version: 4` con `activity`. La restauración sigue aceptando v1-v3 (sin historial) y siempre mezcla.
+- **Días marcados a mano** (para igualar, por ejemplo, la racha de Kindle): ejecuta también `supabase/migration-reading-marks.sql`, que crea la tabla `reading_marks`. En **Calendario → Igualar la racha de Kindle** (con la edición desbloqueada) se marcan los últimos N días terminando hoy; también se puede marcar o quitar un día suelto desde su detalle. Estos días cuentan para las rachas y van en el JSON (`marks`). Sin esa migración, el calendario funciona igual pero no se pueden guardar días marcados.
+- Rutas: `GET /api/activity` (devuelve `entries` y `marks`), `POST /api/activity/import` y `POST /api/activity/marks` (estas dos exigen sesión de edición).
 - Pruebas de la lógica pura: `npm test`.
 
 ## 5. Importar la copia

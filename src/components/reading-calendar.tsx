@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { BookCover } from "@/components/book-cover";
 import { Hanko } from "@/components/hanko";
 import { useLibrary } from "@/components/library-provider";
@@ -55,7 +55,9 @@ function summaryLabel(entries: ReadingLogEntry[]) {
 }
 
 export function ReadingCalendar({ books, activity }: { books: Book[]; activity: ReadingLogEntry[] }) {
-  const { refreshActivity } = useLibrary();
+  const { refreshActivity, editing, markedDays, markDays, unmarkDays } = useLibrary();
+  const [kindleDays, setKindleDays] = useState("30");
+  const [busy, setBusy] = useState(false);
   const today = useMemo(() => todayInZone(Intl.DateTimeFormat().resolvedOptions().timeZone), []);
   const [cursor, setCursor] = useState(() => {
     const { year, month } = parseDay(today);
@@ -75,6 +77,9 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
   // Solo actividad de libros que existen (por si un libro se borró en otra pestaña).
   const visible = useMemo(() => activity.filter((entry) => booksById.has(entry.bookId)), [activity, booksById]);
   const byDay = useMemo(() => groupByDay(visible), [visible]);
+  const marked = useMemo(() => new Set(markedDays), [markedDays]);
+  // Día «leído» = tiene actividad de algún libro o se marcó a mano.
+  const readDays = useMemo(() => new Set([...byDay.keys(), ...markedDays]), [byDay, markedDays]);
 
   const monthStart = formatDay(cursor.year, cursor.month, 1);
   const total = daysInMonth(cursor.year, cursor.month);
@@ -86,11 +91,11 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
   while (cells.length % 7 !== 0) cells.push(null);
   const rows = Array.from({ length: cells.length / 7 }, (_, row) => cells.slice(row * 7, row * 7 + 7));
 
-  const monthDays = cells.filter((day): day is string => day !== null && byDay.has(day));
+  const monthDays = cells.filter((day): day is string => day !== null && readDays.has(day));
   const monthEntries = monthDays.flatMap((day) => byDay.get(day) ?? []);
   const monthBooks = new Set(monthEntries.map((entry) => entry.bookId)).size;
   const monthGain = gainOf(monthEntries);
-  const { current, longest } = useMemo(() => streaks(Array.from(byDay.keys()), today), [byDay, today]);
+  const { current, longest } = useMemo(() => streaks(Array.from(readDays), today), [readDays, today]);
 
   function goToMonth(delta: number) {
     setCursor((value) => {
@@ -130,6 +135,25 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
     return left.localeCompare(booksById.get(b.bookId)?.title ?? "", "es");
   });
   // Si el día seleccionado no está en el mes visible, el roving tabindex cae en el primer día.
+  async function run(action: () => Promise<void>) {
+    setBusy(true);
+    try {
+      await action();
+    } catch {
+      // El proveedor ya muestra el aviso de error.
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Marca los últimos N días terminando hoy (los ya marcados o con lectura se respetan). */
+  function fillKindleStreak() {
+    const count = Math.max(1, Math.min(365, Math.floor(Number(kindleDays)) || 0));
+    const days = Array.from({ length: count }, (_, index) => addDays(today, -index)).filter((day) => !readDays.has(day));
+    if (!days.length) return;
+    void run(() => markDays(days));
+  }
+
   const focusable = cells.includes(selected) ? selected : monthStart;
 
   return (
@@ -157,16 +181,20 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
               if (!day) return <div role="gridcell" className="calendar-cell empty" key={columnIndex} aria-hidden="true" />;
               const entries = byDay.get(day) ?? [];
               const finished = entries.some((entry) => entry.events.includes("finished"));
+              const onlyMarked = !entries.length && marked.has(day);
               const isSelected = day === selected;
               const label = entries.length
                 ? `${dayLabel(day)}, ${summaryLabel(entries)}${finished ? ", libro terminado" : ""}`
-                : `${dayLabel(day)}, sin lecturas`;
+                : onlyMarked
+                  ? `${dayLabel(day)}, marcado como leído`
+                  : `${dayLabel(day)}, sin lecturas`;
               return (
                 <div role="gridcell" className="calendar-cell" key={day}>
                   <button
                     type="button"
                     className="calendar-day"
-                    data-level={entries.length ? levelOf(entries) : 0}
+                    data-level={entries.length ? levelOf(entries) : onlyMarked ? 1 : 0}
+                    data-marked={onlyMarked || undefined}
                     data-today={day === today || undefined}
                     data-future={day > today || undefined}
                     aria-pressed={isSelected}
@@ -176,6 +204,7 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
                     onClick={() => select(day)}
                   >
                     <span className="calendar-date">{parseDay(day).date}</span>
+                    {onlyMarked && <span className="calendar-check" aria-hidden="true"><Check size={13} /></span>}
                     {finished && <span className="calendar-seal" aria-hidden="true"><Hanko kind="read" size="sm" /></span>}
                   </button>
                 </div>
@@ -227,9 +256,39 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
             })}
           </ul>
         ) : (
-          <p className="calendar-empty">{selected > today ? "Este día todavía no ha llegado." : "Ese día no registraste lecturas."}</p>
+          <p className="calendar-empty">
+            {selected > today
+              ? "Este día todavía no ha llegado."
+              : marked.has(selected)
+                ? "Día marcado como leído, sin libros registrados."
+                : "Ese día no registraste lecturas."}
+          </p>
+        )}
+        {editing && selected <= today && (marked.has(selected) || !selectedEntries.length) && (
+          <button
+            type="button"
+            className="button secondary calendar-mark"
+            disabled={busy}
+            onClick={() => void run(() => (marked.has(selected) ? unmarkDays([selected]) : markDays([selected])))}
+          >
+            {marked.has(selected) ? "Quitar la marca de este día" : "Marcar este día como leído"}
+          </button>
         )}
       </section>
+
+      {editing && (
+        <details className="calendar-kindle">
+          <summary>Igualar la racha de Kindle</summary>
+          <p>Marca como leídos los últimos días, terminando hoy, para que cuenten en la racha aunque no tengan un libro asociado. Los días que ya tienen lectura no se tocan.</p>
+          <div className="calendar-kindle-form">
+            <label>
+              Días de racha
+              <input type="number" inputMode="numeric" min={1} max={365} value={kindleDays} onChange={(event) => setKindleDays(event.target.value)} />
+            </label>
+            <button type="button" className="button" disabled={busy} onClick={fillKindleStreak}>Marcar últimos {Math.max(1, Math.min(365, Math.floor(Number(kindleDays)) || 0))} días</button>
+          </div>
+        </details>
+      )}
 
       <p className="recap-note">El calendario empieza a registrar desde que se activó; las lecturas anteriores no tienen fecha exacta.</p>
     </section>

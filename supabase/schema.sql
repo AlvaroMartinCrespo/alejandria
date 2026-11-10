@@ -182,6 +182,18 @@ revoke all on function public.log_reading_activity(text, date, text, smallint, s
 grant execute on function public.log_reading_activity(text, date, text, smallint, smallint)
   to service_role;
 
+
+-- ===== Días marcados a mano (migration-reading-marks.sql) =====
+
+create table if not exists public.reading_marks (
+  day date primary key,
+  created_at timestamptz not null default now()
+);
+
+alter table public.reading_marks enable row level security;
+revoke all on table public.reading_marks from anon, authenticated;
+grant all on table public.reading_marks to service_role;
+
 commit;
 
 notify pgrst, 'reload schema';

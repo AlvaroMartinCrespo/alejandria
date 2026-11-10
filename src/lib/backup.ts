@@ -10,6 +10,7 @@ interface BackupSource {
   collections: Collection[];
   anime: Anime[];
   activity: ReadingLogEntry[];
+  marks: string[];
 }
 
 /**
@@ -17,7 +18,7 @@ interface BackupSource {
  * `collectionId` de cada libro), historial de lectura y animes con todos sus campos, orden incluido.
  * Misma estructura que lee `parseBookBackup` / `parseAnimeBackup`.
  */
-export function buildLibraryBackup({ books, collections, anime, activity }: BackupSource): LibraryBackup {
+export function buildLibraryBackup({ books, collections, anime, activity, marks }: BackupSource): LibraryBackup {
   return {
     format: "alejandria-library-backup",
     version: BACKUP_VERSION,
@@ -30,6 +31,7 @@ export function buildLibraryBackup({ books, collections, anime, activity }: Back
     collections,
     anime,
     activity,
+    marks,
   };
 }
 

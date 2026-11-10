@@ -51,6 +51,8 @@ export interface LibraryBackup {
   anime?: Anime[];
   /** Solo en copias v4: historial del calendario de lectura. */
   activity?: ReadingLogEntry[];
+  /** Solo en copias v4: días marcados a mano como «he leído» (sin libro). */
+  marks?: string[];
 }
 
 /**
