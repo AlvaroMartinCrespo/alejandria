@@ -28,6 +28,23 @@ function writeOpen(storageKey: string, id: string, open: boolean) {
 }
 
 /**
+ * Estado abierto/cerrado recordado en localStorage (por defecto, cerrado).
+ * Lo comparten los desplegables de año y el del recap total.
+ */
+export function useFoldState(storageKey: string, id: string) {
+  // Lee el estado guardado sin desajustes de hidratación (en servidor: cerrado).
+  const open = useSyncExternalStore(
+    (notify) => {
+      listeners.add(notify);
+      return () => listeners.delete(notify);
+    },
+    () => readOpen(storageKey, id),
+    () => false,
+  );
+  return { open, setOpen: (next: boolean) => writeOpen(storageKey, id, next) };
+}
+
+/**
  * Desplegable de un año. Recuerda en localStorage si estaba abierto o cerrado
  * (por defecto, cerrado). `forceOpen` lo abre temporalmente (p. ej. durante una
  * búsqueda) sin modificar el estado guardado.
@@ -47,15 +64,7 @@ export function YearFold({
   forceOpen?: boolean;
   children: React.ReactNode;
 }) {
-  // Lee el estado guardado sin desajustes de hidratación (en servidor: cerrado).
-  const open = useSyncExternalStore(
-    (notify) => {
-      listeners.add(notify);
-      return () => listeners.delete(notify);
-    },
-    () => readOpen(storageKey, id),
-    () => false,
-  );
+  const { open, setOpen } = useFoldState(storageKey, id);
 
   return (
     <details
@@ -64,7 +73,7 @@ export function YearFold({
       onToggle={(event) => {
         const next = (event.currentTarget as HTMLDetailsElement).open;
         if (forceOpen) return;
-        if (next !== open) writeOpen(storageKey, id, next);
+        if (next !== open) setOpen(next);
       }}
     >
       <summary>

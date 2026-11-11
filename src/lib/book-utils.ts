@@ -39,6 +39,8 @@ export function normalizeBook(value: BookInput): Book {
     addedAt: value.addedAt ?? new Date().toISOString(),
     progress: Math.max(0, Math.min(100, value.progress ?? legacyProgress)),
     notes: value.notes ?? "",
+    ...(value.createdAt ? { createdAt: value.createdAt } : {}),
+    ...(value.updatedAt ? { updatedAt: value.updatedAt } : {}),
   };
 }
 

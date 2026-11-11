@@ -72,7 +72,7 @@ export function LibraryStatusChart({ data }: { data: StatusDatum[] }) {
       </ResponsiveContainer>
       <div className="mono-donut-center">
         <strong>{active?.value ?? total}</strong>
-        <small>{active?.name ?? "libros"}</small>
+        {active && <small>{active.name}</small>}
       </div>
     </div>
   );

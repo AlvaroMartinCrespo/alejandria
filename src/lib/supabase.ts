@@ -23,6 +23,8 @@ const BOOK_COLUMNS = [
   "added_at",
   "progress",
   "notes",
+  "created_at",
+  "updated_at",
 ].join(",");
 
 type BookRow = {
@@ -44,12 +46,15 @@ type BookRow = {
   added_at: string;
   progress: number;
   notes: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 type CollectionRow = {
   id: string;
   name: string;
   sort_order: number;
+  created_at?: string;
 };
 
 function getConfig() {
@@ -107,6 +112,8 @@ function fromRow(row: BookRow): Book {
     addedAt: row.added_at,
     progress: row.progress,
     notes: row.notes,
+    ...(row.created_at ? { createdAt: row.created_at } : {}),
+    ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
   };
 }
 
@@ -206,17 +213,22 @@ export async function updateBook(
 }
 
 function fromCollectionRow(row: CollectionRow): Collection {
-  return { $id: row.id, name: row.name, order: row.sort_order };
+  return {
+    $id: row.id,
+    name: row.name,
+    order: row.sort_order,
+    ...(row.created_at ? { createdAt: row.created_at } : {}),
+  };
 }
 
 export async function listCollections() {
-  const rows = await request<CollectionRow[]>("collections?select=id,name,sort_order&order=sort_order.asc");
+  const rows = await request<CollectionRow[]>("collections?select=id,name,sort_order,created_at&order=sort_order.asc");
   return rows.map(fromCollectionRow);
 }
 
 export async function createCollection(name: string) {
   const collections = await listCollections();
-  const rows = await request<CollectionRow[]>("collections?select=id,name,sort_order", {
+  const rows = await request<CollectionRow[]>("collections?select=id,name,sort_order,created_at", {
     method: "POST",
     headers: { Prefer: "return=representation" },
     body: JSON.stringify({ id: crypto.randomUUID(), name, sort_order: collections.length }),
@@ -229,7 +241,7 @@ export async function updateCollection(id: string, changes: Pick<Partial<Collect
   if (changes.name !== undefined) row.name = changes.name;
   if (changes.order !== undefined) row.sort_order = changes.order;
   const rows = await request<CollectionRow[]>(
-    `collections?id=eq.${encodeURIComponent(id)}&select=id,name,sort_order`,
+    `collections?id=eq.${encodeURIComponent(id)}&select=id,name,sort_order,created_at`,
     { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify(row) },
   );
   if (!rows[0]) throw new Error("La carpeta no existe");
@@ -325,10 +337,13 @@ const ANIME_COLUMNS = [
   "total_episodes",
   "total_seasons",
   "finished_year",
+  "finished_month",
   "last_watched_at",
   "sort_order",
   "notes",
   "added_at",
+  "created_at",
+  "updated_at",
 ].join(",");
 
 type AnimeRow = {
@@ -349,10 +364,13 @@ type AnimeRow = {
   total_episodes: number | null;
   total_seasons: number | null;
   finished_year: number | null;
+  finished_month: number | null;
   last_watched_at: string | null;
   sort_order: number | null;
   notes: string;
   added_at: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 /** Se lanza al crear un anime cuyo `source_id` ya existe (las rutas lo traducen a 409). */
@@ -382,10 +400,13 @@ function fromAnimeRow(row: AnimeRow): Anime {
     totalEpisodes: row.total_episodes,
     totalSeasons: row.total_seasons,
     finishedYear: row.finished_year,
+    finishedMonth: row.finished_month,
     lastWatchedAt: row.last_watched_at,
     order: row.sort_order,
     notes: row.notes,
     addedAt: row.added_at,
+    ...(row.created_at ? { createdAt: row.created_at } : {}),
+    ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
   };
 }
 
@@ -408,6 +429,7 @@ function toAnimeRow(anime: Anime): AnimeRow {
     total_episodes: anime.totalEpisodes,
     total_seasons: anime.totalSeasons,
     finished_year: anime.finishedYear,
+    finished_month: anime.finishedMonth,
     last_watched_at: anime.lastWatchedAt,
     sort_order: anime.order,
     notes: anime.notes,
@@ -478,6 +500,7 @@ export async function updateAnime(
     totalEpisodes: "total_episodes",
     totalSeasons: "total_seasons",
     finishedYear: "finished_year",
+    finishedMonth: "finished_month",
     lastWatchedAt: "last_watched_at",
     order: "sort_order",
     notes: "notes",
@@ -549,7 +572,7 @@ export async function checkAnimeTable() {
 
 /* ===== CALENDARIO DE LECTURA ===== */
 
-const READING_LOG_COLUMNS = "id,book_id,day,events,progress_from,progress_to";
+const READING_LOG_COLUMNS = "id,book_id,day,events,progress_from,progress_to,created_at,updated_at";
 
 type ReadingLogRow = {
   id: string;
@@ -558,6 +581,8 @@ type ReadingLogRow = {
   events: ReadingEvent[];
   progress_from: number | null;
   progress_to: number | null;
+  created_at?: string;
+  updated_at?: string;
 };
 
 function fromReadingLogRow(row: ReadingLogRow): ReadingLogEntry {
@@ -568,6 +593,8 @@ function fromReadingLogRow(row: ReadingLogRow): ReadingLogEntry {
     events: row.events,
     progressFrom: row.progress_from,
     progressTo: row.progress_to,
+    ...(row.created_at ? { createdAt: row.created_at } : {}),
+    ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
   };
 }
 
@@ -650,8 +677,17 @@ export async function checkReadingLogTable() {
 /* ===== DÍAS MARCADOS A MANO ===== */
 
 export async function listReadingMarks() {
-  const rows = await request<Array<{ day: string }>>("reading_marks?select=day&order=day.asc&limit=5000");
-  return rows.map((row) => row.day);
+  // Paginado: PostgREST corta cada respuesta, y una copia no puede perder días por un límite fijo.
+  const pageSize = 1000;
+  const days: string[] = [];
+
+  for (let offset = 0; ; offset += pageSize) {
+    const rows = await request<Array<{ day: string }>>(
+      `reading_marks?select=day&order=day.asc&offset=${offset}&limit=${pageSize}`,
+    );
+    days.push(...rows.map((row) => row.day));
+    if (rows.length < pageSize) return days;
+  }
 }
 
 /** Marca días (idempotente: los ya marcados se ignoran). */

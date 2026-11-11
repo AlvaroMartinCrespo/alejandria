@@ -14,6 +14,9 @@ export interface ReadingLogEntry {
   progressFrom: number | null;
   /** Progreso más reciente del día. */
   progressTo: number | null;
+  /** Marcas de tiempo de la base de datos (ISO). Solo informativas: se exportan pero no se restauran. */
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /** Entrada que se fusiona con la fila del día (un solo evento). */

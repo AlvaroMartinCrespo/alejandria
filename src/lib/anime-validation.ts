@@ -84,6 +84,7 @@ export function parseAnimeInput(value: unknown): AnimeInput {
     totalEpisodes: optionalInteger(input.totalEpisodes, 0, 100000),
     totalSeasons: optionalInteger(input.totalSeasons, 1, 100),
     finishedYear: optionalInteger(input.finishedYear, 1900, 2100),
+    finishedMonth: optionalInteger(input.finishedMonth, 1, 12),
     lastWatchedAt: isoDate(input.lastWatchedAt),
     notes: text(input.notes, 50000),
   };
@@ -116,6 +117,7 @@ export function parseAnimeChanges(value: unknown): AnimeChanges {
   if ("totalEpisodes" in input) changes.totalEpisodes = optionalInteger(input.totalEpisodes, 0, 100000);
   if ("totalSeasons" in input) changes.totalSeasons = optionalInteger(input.totalSeasons, 1, 100);
   if ("finishedYear" in input) changes.finishedYear = optionalInteger(input.finishedYear, 1900, 2100);
+  if ("finishedMonth" in input) changes.finishedMonth = optionalInteger(input.finishedMonth, 1, 12);
   if ("lastWatchedAt" in input) changes.lastWatchedAt = isoDate(input.lastWatchedAt);
   if ("order" in input) changes.order = optionalInteger(input.order);
   if ("notes" in input) changes.notes = text(input.notes, 50000);
@@ -163,6 +165,7 @@ function backupAnime(value: unknown): Anime {
     totalEpisodes: optionalInteger(input.totalEpisodes ?? input.total_episodes, 0, 100000),
     totalSeasons: optionalInteger(input.totalSeasons ?? input.total_seasons, 1, 100),
     finishedYear: optionalInteger(input.finishedYear ?? input.finished_year, 1900, 2100),
+    finishedMonth: optionalInteger(input.finishedMonth ?? input.finished_month, 1, 12),
     lastWatchedAt: lastWatchedValue && !Number.isNaN(Date.parse(lastWatchedValue))
       ? new Date(lastWatchedValue).toISOString()
       : null,

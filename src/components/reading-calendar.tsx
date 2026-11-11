@@ -94,7 +94,6 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
   const monthDays = cells.filter((day): day is string => day !== null && readDays.has(day));
   const monthEntries = monthDays.flatMap((day) => byDay.get(day) ?? []);
   const monthBooks = new Set(monthEntries.map((entry) => entry.bookId)).size;
-  const monthGain = gainOf(monthEntries);
   const { current, longest } = useMemo(() => streaks(Array.from(readDays), today), [readDays, today]);
 
   function goToMonth(delta: number) {
@@ -217,7 +216,6 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
       <dl className="calendar-summary" aria-label={`Resumen de ${MONTH_NAMES[cursor.month - 1].toLowerCase()}`}>
         <div><dt>Días leídos</dt><dd>{monthDays.length}</dd></div>
         <div><dt>Libros distintos</dt><dd>{monthBooks}</dd></div>
-        <div><dt>Avance en el mes</dt><dd>{monthGain > 0 ? `+${monthGain.toLocaleString("es")} %` : "—"}</dd></div>
         <div><dt>Racha actual</dt><dd>{plural(current, "día", "días")}</dd></div>
         <div><dt>Racha máxima</dt><dd>{plural(longest, "día", "días")}</dd></div>
       </dl>

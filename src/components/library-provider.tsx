@@ -32,6 +32,11 @@ interface LibraryContextValue {
   activity: ReadingLogEntry[];
   /** Días marcados a mano como «he leído» (sin libro), YYYY-MM-DD. Cuentan para la racha. */
   markedDays: string[];
+  /**
+   * Apartados del historial que no se pudieron cargar del servidor (`"activity"`, `"marks"`).
+   * Mientras no esté vacío, las listas `activity` / `markedDays` están incompletas.
+   */
+  historyMissing: Array<"activity" | "marks">;
   markDays: (days: string[]) => Promise<void>;
   unmarkDays: (days: string[]) => Promise<void>;
   /** Vuelve a pedir el historial al servidor (en modo local no hace nada). */
@@ -66,6 +71,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [activity, setActivity] = useState<ReadingLogEntry[]>([]);
   const [markedDays, setMarkedDays] = useState<string[]>([]);
+  const [historyMissing, setHistoryMissing] = useState<Array<"activity" | "marks">>([]);
   const [loading, setLoading] = useState(true);
   // Copia síncrona de `books`: el autosave dispara varios guardados seguidos y el
   // cierre de `updateBook` podría ver un progreso anterior al real.
@@ -97,6 +103,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         setCollections(data.collections);
         setActivity(history?.entries ?? []);
         setMarkedDays(history?.marks ?? []);
+        setHistoryMissing(history?.missing ?? ["activity", "marks"]);
         setStorageMode("supabase");
         setLoading(false);
       });
@@ -152,12 +159,20 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  async function fetchActivity(): Promise<{ entries: ReadingLogEntry[]; marks: string[] } | null> {
+  async function fetchActivity(): Promise<{
+    entries: ReadingLogEntry[];
+    marks: string[];
+    missing: Array<"activity" | "marks">;
+  } | null> {
     try {
       const response = await fetch("/api/activity", { cache: "no-store" });
       if (!response.ok) return null;
-      const data = (await response.json()) as { entries: ReadingLogEntry[]; marks?: string[] };
-      return { entries: data.entries, marks: data.marks ?? [] };
+      const data = (await response.json()) as { entries: ReadingLogEntry[]; marks?: string[]; marksAvailable?: boolean };
+      return {
+        entries: data.entries,
+        marks: data.marks ?? [],
+        missing: data.marksAvailable === false ? ["marks"] : [],
+      };
     } catch {
       return null;
     }
@@ -169,6 +184,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     if (history) {
       setActivity(history.entries);
       setMarkedDays(history.marks);
+      setHistoryMissing(history.missing);
     }
   }
 
@@ -500,6 +516,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       if (history) {
         setActivity(history.entries);
         setMarkedDays(history.marks);
+        setHistoryMissing(history.missing);
       }
       showNotice("success", `${imported.books.length} libros restaurados en Supabase.`);
     } catch {
@@ -537,6 +554,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         collections,
         activity,
         markedDays,
+        historyMissing,
         markDays,
         unmarkDays,
         refreshActivity,

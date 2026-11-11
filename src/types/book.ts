@@ -27,24 +27,38 @@ export interface Book {
   addedAt: string; // ISO date
   progress: number; // porcentaje leído, de 0 a 100
   notes?: string; // notas personales opcionales
+  /** Marcas de tiempo de la base de datos (ISO). Solo informativas: se exportan pero no se restauran. */
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Collection {
   $id: string;
   name: string;
   order: number;
+  /** Solo informativo: se exporta pero no se restaura. */
+  createdAt?: string;
 }
 
 export interface LibraryBackup {
   format: "alejandria-library-backup";
-  version: 1 | 2 | 3 | 4;
+  version: 1 | 2 | 3 | 4 | 5;
   exportedAt: string;
+  /** Solo en copias v5: aplicación y versión del esquema que generó el archivo. */
+  app?: "alejandria";
   bookCount: number;
   /** Solo en copias v3 recientes; informativos, la restauración no depende de ellos. */
   collectionCount?: number;
   animeCount?: number;
   /** Solo en copias v4; informativo. */
   activityCount?: number;
+  /** Solo en copias v5; informativo. */
+  markCount?: number;
+  /**
+   * Solo en copias v5. Conjuntos de datos que NO se pudieron cargar al crear la copia
+   * (p. ej. `["activity"]`): la copia está incompleta en esos apartados.
+   */
+  omitted?: string[];
   books: Book[];
   collections?: Collection[];
   /** Solo en copias v3. Las copias v1/v2 no lo traen. */

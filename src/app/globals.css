@@ -4545,6 +4545,16 @@ textarea::placeholder {
   text-decoration: underline;
 }
 
+.recap-subtitle {
+  margin: 0;
+  padding: 22px 20px 0;
+  color: var(--acid);
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .recap-note {
   margin: 0;
   padding: 0 20px 18px;
@@ -4561,7 +4571,38 @@ textarea::placeholder {
 }
 
 .recap-total-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   padding: 24px 20px 20px;
+  list-style: none;
+  cursor: pointer;
+  transition: background .18s;
+}
+
+.recap-total-head::-webkit-details-marker {
+  display: none;
+}
+
+.recap-total-head:hover {
+  background: var(--raised);
+}
+
+.recap-total-head:focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: -2px;
+}
+
+.recap-total-head .year-chevron {
+  flex: none;
+  color: var(--muted);
+  transition: transform .2s ease, color .2s;
+}
+
+.recap-total[open] > .recap-total-head .year-chevron {
+  transform: rotate(180deg);
+  color: var(--acid);
 }
 
 .recap-total-head h2 {
@@ -4608,6 +4649,10 @@ textarea::placeholder {
   .recap-facts li {
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+
+  .recap-subtitle {
+    padding: 18px 14px 0;
   }
 
   .recap-note {
@@ -4803,6 +4848,7 @@ textarea::placeholder {
 .recap-grid article > span,
 .recap-grid small,
 .recap-facts li > span,
+.recap-subtitle,
 .anime-year-label small,
 .author-list li em,
 .print-row span,
@@ -5188,6 +5234,7 @@ svg.lucide:not([stroke-width="3"]) {
   color: var(--muted);
   font-size: 12px;
   font-weight: 400;
+  margin-right: 6px;
 }
 
 .calendar-badge {
@@ -5291,4 +5338,214 @@ svg.lucide:not([stroke-width="3"]) {
   border-radius: 8px;
   background: var(--canvas);
   font: inherit;
+}
+
+/* =====================================================================
+   EXPORTACIÓN (PDF) · resumen, lecturas por año y filas con más datos
+   ===================================================================== */
+
+.print-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0 0 48px;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.print-summary > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 16px 14px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.print-summary span {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.print-summary strong {
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1.1;
+  font-variant-numeric: lining-nums;
+}
+
+.print-summary small {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.print-library .print-row {
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.5fr) 104px 56px 64px;
+  align-items: start;
+  gap: 14px;
+  min-height: 0;
+  padding: 9px 4px;
+}
+
+.print-library .print-row span {
+  overflow-wrap: anywhere;
+}
+
+.print-library .print-row > .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.print-library .print-row strong {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.print-library .print-row-head {
+  padding-top: 8px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--line);
+}
+
+.print-library .print-row-head span {
+  color: var(--subtle);
+  font-size: 9px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.print-library .print-row strong em {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.print-fav {
+  margin-right: 6px;
+  color: var(--acid);
+  font-weight: 400;
+}
+
+.print-progress,
+.print-bar {
+  display: block;
+  height: 4px;
+  background: var(--line);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.print-progress {
+  margin-top: 6px;
+  max-width: 180px;
+}
+
+.print-progress u,
+.print-bar u {
+  display: block;
+  height: 100%;
+  background: var(--acid);
+  text-decoration: none;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.print-library .print-year-row {
+  grid-template-columns: 70px 56px minmax(0, 1fr) 80px 96px;
+  align-items: center;
+}
+
+@media screen and (max-width: 900px) {
+  .print-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media screen and (max-width: 680px) {
+  .print-library .print-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 4px 12px;
+  }
+  .print-library .print-row > strong { grid-column: 1 / -1; }
+  .print-library .print-row > span:nth-of-type(1) { grid-column: 1 / -1; }
+  .print-library .print-row-head { display: none; }
+  .print-library .print-year-row { grid-template-columns: 56px 40px minmax(0, 1fr) 64px; }
+  .print-library .print-year-row > .num:last-of-type { display: none; }
+}
+
+@media print {
+  @page {
+    margin: 14mm 12mm;
+  }
+
+  /* `color-scheme: dark` pinta de negro el margen de la hoja al imprimir con fondos. */
+  html {
+    color-scheme: light;
+  }
+
+  /* Un grupo largo (cientos de libros) debe poder partirse entre páginas; cada fila, no. */
+  .print-library .print-group {
+    break-inside: auto;
+    margin-bottom: 28px;
+  }
+
+  .print-library .print-group-title,
+  .print-library .print-row-head {
+    break-after: avoid;
+  }
+
+  .print-library .print-row,
+  .print-library .print-summary,
+  .print-library .print-summary > div {
+    break-inside: avoid;
+  }
+
+  .print-library .print-years {
+    break-inside: avoid;
+  }
+
+  .print-library .print-header {
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+  }
+
+  .print-summary {
+    margin-bottom: 28px;
+  }
+
+  .print-summary strong {
+    font-size: 24px;
+  }
+
+  .print-library .print-row {
+    padding: 6px 2px;
+  }
+
+  .print-fav {
+    color: #111;
+  }
+
+  .print-progress,
+  .print-bar {
+    background: #ddd;
+  }
+
+  .print-progress u,
+  .print-bar u {
+    background: #111;
+  }
+
+  .print-library .print-group-title {
+    border-bottom-color: #111;
+  }
 }

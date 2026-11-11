@@ -32,10 +32,13 @@ export function normalizeAnime(value: AnimeInput): Anime {
     totalEpisodes: value.totalEpisodes ?? null,
     totalSeasons: value.totalSeasons ?? null,
     finishedYear: value.finishedYear ?? null,
+    finishedMonth: value.finishedMonth ?? null,
     lastWatchedAt: value.lastWatchedAt ?? null,
     order: value.order ?? null,
     notes: value.notes ?? "",
     addedAt: value.addedAt ?? new Date().toISOString(),
+    ...(value.createdAt ? { createdAt: value.createdAt } : {}),
+    ...(value.updatedAt ? { updatedAt: value.updatedAt } : {}),
   };
 }
 

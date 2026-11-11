@@ -188,6 +188,7 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
       status,
       lastWatchedAt: input.lastWatchedAt ?? (status === "watching" ? now.toISOString() : null),
       finishedYear: input.finishedYear ?? (status === "watched" ? now.getFullYear() : null),
+      finishedMonth: input.finishedMonth ?? (status === "watched" ? now.getMonth() + 1 : null),
     };
 
     if (storageMode === "supabase") {
@@ -247,6 +248,7 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
     const changes: AnimeChanges = {
       status,
       finishedYear: status === "watched" ? new Date().getFullYear() : null,
+      finishedMonth: status === "watched" ? new Date().getMonth() + 1 : null,
     };
     if (status === "watching") changes.lastWatchedAt = new Date().toISOString();
     await updateAnime(id, changes);

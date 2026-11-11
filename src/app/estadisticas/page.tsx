@@ -90,7 +90,7 @@ export default function StatisticsPage() {
 }
 
 function Statistics() {
-  const { books, collections, activity, markedDays, editing, restoreBackup } = useLibrary();
+  const { books, collections, activity, markedDays, historyMissing, editing, restoreBackup } = useLibrary();
   const { anime, animeError, restoreAnime } = useAnime();
   const initialTab = useSearchParams().get("tab");
   const [tab, setTab] = useState<Tab>(TABS.some((item) => item.id === initialTab) ? (initialTab as Tab) : "resumen");
@@ -154,8 +154,14 @@ function Statistics() {
       window.alert("No se puede crear la copia: el anime no se ha cargado correctamente. Resuelve el error e inténtalo de nuevo.");
       return;
     }
+    // En Supabase, si el historial no cargó, la lista vacía no es real: se avisa antes de crear una copia coja.
+    if (historyMissing.length) {
+      const names = historyMissing.map((part) => (part === "marks" ? "los días marcados" : "el historial de lectura")).join(" y ");
+      const proceed = window.confirm(`No se ha podido cargar ${names}. La copia saldría sin ${historyMissing.length > 1 ? "ellos" : "ese apartado"}. ¿Quieres descargarla igualmente?`);
+      if (!proceed) return;
+    }
     downloadJson(
-      buildLibraryBackup({ books, collections, anime, activity, marks: markedDays }),
+      buildLibraryBackup({ books, collections, anime, activity, marks: markedDays, omitted: historyMissing }),
       `alejandria-${new Date().toISOString().slice(0, 10)}.json`,
     );
   }

@@ -23,10 +23,14 @@ export interface Anime {
   totalEpisodes: number | null; // capítulos de la temporada actual
   totalSeasons: number | null;
   finishedYear: number | null;
+  finishedMonth: number | null; // mes (1-12) en que se terminó de ver
   lastWatchedAt: string | null; // ISO date
   order: number | null; // posición manual
   notes: string;
   addedAt: string; // ISO date
+  /** Marcas de tiempo de la base de datos (ISO). Solo informativas: se exportan pero no se restauran. */
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /** Resultado normalizado de la búsqueda (Jikan o AniList). */
