@@ -5,7 +5,7 @@ import { register } from "node:module";
 
 register("./alias-loader.mjs", import.meta.url);
 const {
-  addDays, applyIncoming, describeChange, groupByDay, mergeEntry, progressDelta, streaks, todayInZone,
+  addDays, applyIncoming, compareRecentlyRead, lastFinishedDays, describeChange, groupByDay, mergeEntry, progressDelta, streaks, todayInZone,
 } = await import("../src/lib/reading-activity.ts");
 const { parseActivityBackup, parseMarksBackup } = await import("../src/lib/activity-validation.ts");
 
@@ -136,6 +136,20 @@ test("parseMarksBackup", () => {
   assert.deepEqual(parseMarksBackup({ marks: ["2026-11-02", "2026-11-01", "2026-11-02"] }), ["2026-11-01", "2026-11-02"]);
   assert.throws(() => parseMarksBackup({ marks: ["2026-13-01"] }));
   assert.throws(() => parseMarksBackup({ marks: "x" }));
+});
+
+test("lastFinishedDays y orden de recientes: con fecha primero (más reciente arriba), sin fecha después", () => {
+  const e = (bookId, day, events) => ({ $id: `${bookId}-${day}`, bookId, day, events, progressFrom: null, progressTo: null });
+  const days = lastFinishedDays([
+    e("a", "2026-03-01", ["finished"]), e("a", "2026-05-10", ["finished"]), // releído: cuenta el último
+    e("b", "2026-04-02", ["finished"]), e("c", "2026-04-03", ["progress"]), // c no terminó
+  ]);
+  assert.equal(days.get("a"), "2026-05-10");
+  assert.equal(days.get("b"), "2026-04-02");
+  assert.equal(days.has("c"), false);
+  const book = (id, addedAt) => ({ $id: id, addedAt });
+  const list = [book("x", "2026-01-01T00:00:00Z"), book("b", "2020-01-01T00:00:00Z"), book("y", "2026-02-01T00:00:00Z"), book("a", "2019-01-01T00:00:00Z")];
+  assert.deepEqual(list.sort((p, q) => compareRecentlyRead(p, q, days)).map((x) => x.$id), ["a", "b", "y", "x"]);
 });
 
 console.log(`\n${n} pruebas correctas`);

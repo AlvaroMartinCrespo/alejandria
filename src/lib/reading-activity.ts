@@ -99,6 +99,34 @@ export function groupByDay(entries: ReadingLogEntry[]): Map<string, ReadingLogEn
   return map;
 }
 
+/** Último día (YYYY-MM-DD) en que cada libro se marcó como terminado. Los libros sin ese registro no aparecen. */
+export function lastFinishedDays(entries: ReadingLogEntry[]): Map<string, string> {
+  const result = new Map<string, string>();
+  for (const entry of entries) {
+    if (!entry.events.includes("finished")) continue;
+    const current = result.get(entry.bookId);
+    if (!current || entry.day > current) result.set(entry.bookId, entry.day);
+  }
+  return result;
+}
+
+/**
+ * Orden «más recientes» del archivo: primero los libros con día de fin conocido (el más reciente arriba)
+ * y después los que no tienen fecha, en su orden de siempre (los últimos añadidos primero).
+ */
+export function compareRecentlyRead(
+  a: Pick<Book, "$id" | "addedAt">,
+  b: Pick<Book, "$id" | "addedAt">,
+  finishedDays: Map<string, string>,
+): number {
+  const dayA = finishedDays.get(a.$id);
+  const dayB = finishedDays.get(b.$id);
+  if (dayA && dayB) return dayA === dayB ? new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime() : dayB.localeCompare(dayA);
+  if (dayA) return -1;
+  if (dayB) return 1;
+  return new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime();
+}
+
 /* ---------- Fechas YYYY-MM-DD (aritmética en UTC, sin zonas horarias) ---------- */
 
 export function parseDay(day: string): { year: number; month: number; date: number } {

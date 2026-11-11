@@ -96,3 +96,54 @@ El comando comprueba inicio, leídos, estadísticas, exportación y `/api/health
 ## Puntuación 0-10
 
 Si la base de datos viene de la versión con puntuación sobre 5, pega `supabase/migration-rating-10.sql` en **Supabase → SQL Editor → Run** antes de desplegar. Amplía el límite a 10 y duplica las valoraciones existentes; es idempotente (no las duplica dos veces). Las copias JSON antiguas (escala 1-5) se restauran tal cual, sin duplicar.
+
+
+## Copias de seguridad por correo
+
+Cada **14 días** se envía por correo (Resend) la copia **JSON** completa de la biblioteca (formato v5: libros, carpetas, anime, historial y días marcados). No se envía PDF. El archivo se llama `alejandria-backup-YYYY-MM-DD.json` y el correo trae un resumen con el número de libros y anime.
+
+### Puesta en marcha
+
+1. **Supabase:** pega `supabase/migration-backup-log.sql` en **SQL Editor → Run** (aditiva e idempotente; una instalación nueva con `schema.sql` ya la incluye). Sin esta tabla **no se envía nada** (así el cron no reenviaría la copia cada día) y `/api/health` devuelve `lastBackup: "missing"`.
+2. **Resend:** crea una API key y verifica el dominio (o usa el remitente de pruebas de Resend, que solo entrega a tu propia cuenta).
+3. **Variables de entorno** (Vercel → Settings → Environment Variables, y `.env.local` en local; nunca en el repositorio):
+
+| Variable | Para qué |
+| --- | --- |
+| `CRON_SECRET` | Secreto largo y aleatorio. Vercel lo envía como `Authorization: Bearer …` al cron. Sin él, la ruta responde 503. |
+| `RESEND_API_KEY` | Clave de Resend. |
+| `BACKUP_EMAIL_TO` | Destino (varias direcciones separadas por comas). Usa un buzón privado: el JSON lleva tus notas y el correo no va cifrado. |
+| `BACKUP_EMAIL_FROM` | Remitente verificado en Resend, p. ej. `Alejandría <backup@tu-dominio.com>`. |
+| `BACKUP_EVERY_DAYS` | Opcional, por defecto 14 (1-365). |
+| `ALEJANDRIA_TIMEZONE` | Opcional, por defecto `Europe/Madrid`. Decide la fecha del archivo y el cómputo de días. |
+
+4. Redespliega. `vercel.json` ya incluye el cron.
+
+### Cómo funciona
+
+- `vercel.json` ejecuta `/api/cron/backup` **a diario a las 07:00 UTC** (08:00 en invierno, 09:00 en verano en Madrid). Solo envía si han pasado `BACKUP_EVERY_DAYS` **días naturales** (en `ALEJANDRIA_TIMEZONE`) desde el último envío correcto; el resto de días no hace nada.
+- La ruta solo acepta `Authorization: Bearer $CRON_SECRET`. La cookie de edición no la autoriza.
+- Cada intento (éxito o error) queda en `backup_log` con fecha, origen, nº de libros y anime, tamaño del JSON y mensaje de error. Si un envío falla no se registra ningún éxito, así que **el cron reintenta al día siguiente**.
+- Si no se pueden leer el historial o los días marcados, la copia sale igualmente con `omitted` y el correo lo avisa. Si fallan libros, carpetas o anime, no se envía nada y queda registrado.
+- Límite: el adjunto no puede superar 30 MB (Resend admite 40 MB tras codificar en base64).
+- `/api/health` incluye `lastBackup` (fecha ISO del último envío correcto, `null` si nunca).
+
+### Probarlo a mano
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" https://tu-app.vercel.app/api/cron/backup
+```
+
+Respuestas: `{"status":"sent",…}` (envió), `{"status":"skipped","nextDueDate":"…"}` (aún no toca) o `{"status":"error","stage":"…","error":"…"}` (código 500). Para forzar un envío antes de plazo, borra o renombra temporalmente la última fila `success` de `backup_log`, o usa el botón «Enviar copia ahora» de Estadísticas (ver abajo).
+
+### Envío manual desde Estadísticas
+
+Al final de **Estadísticas** hay un bloque «Copia por correo» con la fecha de la última copia enviada correctamente y cuándo toca la siguiente automática. Con la sesión de edición desbloqueada aparece el botón **«Enviar copia ahora»**, que llama a `POST /api/backup/send` (protegido con `hasEditorSession()`; 401 sin sesión) y fuerza el envío sin esperar los 14 días.
+
+- El envío manual se registra en `backup_log` con `trigger = manual`. Cuenta como último envío correcto, así que **el plazo de 14 días del cron se reinicia desde esa copia**.
+- Si falla, el botón muestra el error y no se registra ningún éxito (el cron sigue reintentando a diario).
+- `GET /api/backup/status` devuelve solo fechas, recuentos y si la configuración está completa (nunca claves ni direcciones). Responde 503 si falta `backup_log`.
+
+### Pruebas
+
+`npm test` incluye `scripts/test-email.mjs` (Resend con `fetch` simulado) y `scripts/test-backup-run.mjs` (plazo de 14 días, zona horaria, errores, reintento, límite de tamaño).

@@ -707,3 +707,51 @@ export async function removeReadingMarks(days: string[]) {
     headers: { Prefer: "return=minimal" },
   });
 }
+
+
+/* ===== REGISTRO DE COPIAS POR CORREO ===== */
+
+export interface BackupLogInput {
+  status: "success" | "error";
+  trigger: "cron" | "manual";
+  bookCount: number;
+  animeCount: number;
+  jsonBytes: number | null;
+  errorMessage: string | null;
+}
+
+export interface LastBackup {
+  sentAt: string;
+  trigger: "cron" | "manual";
+  bookCount: number;
+  animeCount: number;
+}
+
+/** Último envío *correcto*. Lanza si la tabla no existe (falta `migration-backup-log.sql`). */
+export async function getLastSuccessfulBackup(): Promise<LastBackup | null> {
+  const rows = await request<Array<{ sent_at: string; trigger: "cron" | "manual"; book_count: number; anime_count: number }>>(
+    "backup_log?select=sent_at,trigger,book_count,anime_count&status=eq.success&order=sent_at.desc&limit=1",
+  );
+  const row = rows[0];
+  return row ? { sentAt: row.sent_at, trigger: row.trigger, bookCount: row.book_count, animeCount: row.anime_count } : null;
+}
+
+export async function insertBackupLog(entry: BackupLogInput) {
+  await request<void>("backup_log", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      status: entry.status,
+      trigger: entry.trigger,
+      book_count: entry.bookCount,
+      anime_count: entry.animeCount,
+      json_bytes: entry.jsonBytes,
+      // La tabla limita el mensaje a 2000 caracteres.
+      error_message: entry.errorMessage ? entry.errorMessage.slice(0, 2000) : null,
+    }),
+  });
+}
+
+export async function checkBackupLogTable() {
+  await request<Array<{ id: string }>>("backup_log?select=id&limit=1");
+}

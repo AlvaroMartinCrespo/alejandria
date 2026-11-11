@@ -47,6 +47,15 @@ Se usa la API nativa del navegador en lugar de `dnd-kit` porque no se pueden ins
 - [x] Restauración JSON con mezcla de duplicados.
 - [x] Vista imprimible de toda la biblioteca agrupada por estado para guardar como PDF.
 
+## Copias de seguridad por correo (plan `alejandria-backup-plan.md`)
+
+- [x] Pasos 1-7: variables de entorno, tabla `backup_log`, JSON v5, envío con Resend (`fetch`) y cron diario `/api/cron/backup` (protegido con `CRON_SECRET`, envía cada 14 días naturales y reintenta al día siguiente si falla).
+- [x] Paso 8: botón «Enviar copia ahora» en Estadísticas (solo con sesión de edición), `POST /api/backup/send`, `GET /api/backup/status`, fecha de la última copia en pantalla y `lastBackup` en `/api/health`.
+- [x] Paso 9: documentación (`DEPLOYMENT.md`, `README.md`, este archivo, `.env.local.example`).
+- [ ] Pendiente del plan original: adjuntar el PDF (`pdf-lib`, fuente Noto Sans JP, `export-groups.ts`, `backup-pdf.ts`). Hoy el correo solo lleva el JSON.
+- [ ] Rotar los secretos expuestos en el repositorio antes de desplegar.
+- [ ] En tu entorno: aplicar `supabase/migration-backup-log.sql`, configurar las variables en Vercel, `npm run lint`, `npm run build` y probar un envío real.
+
 ## Fase 11 - Pulido
 
 - [x] Diseño móvil, tablet y escritorio.

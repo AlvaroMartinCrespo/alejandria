@@ -2386,6 +2386,43 @@ textarea::placeholder {
   font-size: 12px;
 }
 
+.backup-mail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 40px;
+  padding: 24px 0 32px;
+  border-top: 1px solid var(--line);
+}
+
+.backup-mail h2 {
+  margin: 0 0 5px;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.backup-mail p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.backup-mail .backup-mail-notice {
+  min-height: 18px;
+  margin-top: 6px;
+}
+
+.backup-mail .backup-mail-notice.ok {
+  color: var(--ink);
+}
+
+.backup-mail .backup-mail-notice.error {
+  color: #ff735d;
+}
+
 .stats-tabs {
   display: flex;
   gap: 26px;
@@ -3640,6 +3677,10 @@ textarea::placeholder {
   .page-shell {
     width: 100%;
     padding: 20px;
+  }
+
+  .backup-mail {
+    display: none;
   }
 
   .stat-grid,

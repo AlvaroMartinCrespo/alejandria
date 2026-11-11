@@ -5,15 +5,18 @@ import { BookRow } from "@/components/book-row";
 import { useLibrary } from "@/components/library-provider";
 import { LibrarySkeleton } from "@/components/library-skeleton";
 import { YearFold } from "@/components/year-fold";
+import { compareRecentlyRead, lastFinishedDays } from "@/lib/reading-activity";
 
 type Sort = "recent" | "rating" | "author";
 
 const FOLD_STORAGE_KEY = "alejandria-open-read-years-v1";
 
 export default function ReadBooksPage() {
-  const { books, loading } = useLibrary();
+  const { books, activity, loading } = useLibrary();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("recent");
+  // Día en que se terminó cada libro (según el calendario); sirve para el orden «Más recientes».
+  const finishedDays = lastFinishedDays(activity);
   const deferredQuery = useDeferredValue(query.toLocaleLowerCase("es"));
   const filtered = books
     .filter((book) => book.status === "read")
@@ -39,7 +42,7 @@ export default function ReadBooksPage() {
       .sort((a, b) => {
         if (sort === "rating") return (b.rating ?? 0) - (a.rating ?? 0);
         if (sort === "author") return (a.authors[0] ?? "").localeCompare(b.authors[0] ?? "", "es");
-        return new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime();
+        return compareRecentlyRead(a, b, finishedDays);
       });
   }
 

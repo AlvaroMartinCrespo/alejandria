@@ -8,6 +8,7 @@ import { LibraryStatusChart, MonthlyReadingChart, RatingChart } from "@/componen
 import { LibraryAuthors } from "@/components/library-authors";
 import { LibraryRecap } from "@/components/library-recap";
 import { ReadingCalendar } from "@/components/reading-calendar";
+import { BackupEmail } from "@/components/backup-email";
 import { BookCover } from "@/components/book-cover";
 import { YearFold } from "@/components/year-fold";
 import { useAnime } from "@/components/anime-provider";
@@ -311,6 +312,7 @@ function Statistics() {
       )}
 
       <section className="backup-note"><div><h2>Tu biblioteca, siempre tuya</h2><p>JSON conserva o restaura todos los datos. PDF abre la vista de impresión para guardar un listado legible.</p></div><span>Una copia cuando tú quieras</span></section>
+      <BackupEmail editing={editing} />
     </>
   );
 }
