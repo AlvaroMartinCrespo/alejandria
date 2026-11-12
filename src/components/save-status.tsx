@@ -172,20 +172,22 @@ export function SaveIndicator({ state }: { state: SaveState }) {
 }
 
 const CONNECTION_LABELS: Record<Exclude<RealtimeStatus, "off">, string> = {
+  unconfigured: "Tiempo real desactivado",
   live: "En vivo",
   connecting: "Conectando…",
   offline: "Sin conexión en vivo",
 };
 
 const CONNECTION_HINTS: Record<Exclude<RealtimeStatus, "off">, string> = {
+  unconfigured: "Faltan NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY al compilar. Añádelas y vuelve a desplegar.",
   live: "Los cambios de otros dispositivos aparecen al instante.",
   connecting: "Conectando con el canal de tiempo real.",
   offline: "Sin canal en vivo: la app se actualiza al volver a la pestaña y cada pocos segundos.",
 };
 
 /**
- * Estado del canal de tiempo real. No pinta nada si no hay tiempo real (modo local o sin
- * variables `NEXT_PUBLIC_*`). `compact` muestra solo el punto (cabecera, visible en móvil).
+ * Estado del canal de tiempo real. No pinta nada en modo local; en modo Supabase sin
+ * variables `NEXT_PUBLIC_*` muestra un punto gris. `compact` muestra solo el punto (cabecera, visible en móvil).
  */
 export function ConnectionIndicator({ state, compact = false }: { state: RealtimeStatus; compact?: boolean }) {
   if (state === "off") return null;

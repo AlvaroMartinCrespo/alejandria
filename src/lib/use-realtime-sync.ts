@@ -5,9 +5,10 @@ import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import type { ChangeEvent } from "@/lib/realtime-events";
 
 /**
- * `off`: sin tiempo real (modo local o faltan variables) · `connecting` · `live` · `offline`.
+ * `off`: modo local, sin tiempo real · `unconfigured`: modo Supabase pero faltan las variables
+ * `NEXT_PUBLIC_*` en la compilación · `connecting` · `live` · `offline`.
  */
-export type RealtimeStatus = "off" | "connecting" | "live" | "offline";
+export type RealtimeStatus = "off" | "unconfigured" | "connecting" | "live" | "offline";
 
 interface Options {
   enabled: boolean;
@@ -63,7 +64,11 @@ export function useRealtimeSync(options: Options) {
   useEffect(() => {
     if (!enabled) return;
     const supabase = getSupabaseBrowser();
-    if (!supabase) return;
+    if (!supabase) {
+      // Se muestra un punto gris para poder diagnosticar que faltan las variables en el build.
+      queueMicrotask(() => setStatus("unconfigured"));
+      return () => setStatus("off");
+    }
 
     let active = true;
     const channel = supabase.channel(channelName);

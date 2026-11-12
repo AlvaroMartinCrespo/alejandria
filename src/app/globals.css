@@ -1542,6 +1542,10 @@ summary:focus-visible {
   background: var(--gold);
 }
 
+.connection-indicator.unconfigured .connection-dot {
+  background: var(--subtle);
+}
+
 .connection-indicator.live {
   color: var(--acid);
 }

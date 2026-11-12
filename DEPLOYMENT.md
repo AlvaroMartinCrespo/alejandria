@@ -172,5 +172,5 @@ Con las variables presentes, la app abre un canal de Realtime por provider (libr
 6. Escribe en las notas en B mientras A cambia ese libro: lo que escribes no se pisa; el cambio de A se aplica ~1,5 s después de salir del campo.
 7. Bloquea la edición en B (modo lectura): sigue recibiendo cambios.
 
-El punto de la cabecera (y el texto del pie en escritorio) indica el canal: verde «En vivo», pulsante «Conectando…», rojo «Sin conexión en vivo». Sin variables `NEXT_PUBLIC_*` no se muestra.
+El punto de la cabecera (y el texto del pie en escritorio) indica el canal: verde «En vivo», pulsante «Conectando…», rojo «Sin conexión en vivo». Punto gris = faltan las variables `NEXT_PUBLIC_*` en la compilación (añádelas y redespliega). En modo local no se muestra nada.
 
