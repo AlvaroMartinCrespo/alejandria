@@ -40,10 +40,22 @@ export function ProgressEditor({
   const lastSaved = useRef(progress);
   const dirty = useRef(false);
   const onSaveRef = useRef(onSave);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     onSaveRef.current = onSave;
   });
+
+  // Sincronización entre dispositivos: si el progreso cambia desde fuera (tiempo real u otro
+  // refresco), el borrador debe reflejarlo. Antes `draft` solo se inicializaba una vez con
+  // `useState`, así que el input seguía mostrando el valor viejo aunque la barra se actualizara.
+  // No se toca si el usuario está escribiendo aquí o hay un guardado propio pendiente/en vuelo.
+  useEffect(() => {
+    if (dirty.current || inFlight.current || timer.current) return;
+    if (inputRef.current && document.activeElement === inputRef.current) return;
+    lastSaved.current = progress;
+    queueMicrotask(() => setDraft(String(progress)));
+  }, [progress]);
 
   // Al salir de la página con un cambio pendiente, se guarda en lugar de perderlo.
   useEffect(() => {
@@ -153,6 +165,7 @@ export function ProgressEditor({
       <label htmlFor={inputId}>Porcentaje leído</label>
       <input
         id={inputId}
+        ref={inputRef}
         type="text"
         inputMode="numeric"
         pattern="[0-9]*"
