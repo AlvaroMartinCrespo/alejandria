@@ -8,12 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "check:deploy": "node scripts/check-deployment.mjs",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-activity.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-recap.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-backup.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-email.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-backup-run.mjs"
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-activity.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-recap.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-backup.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-email.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-backup-run.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-row-mappers.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-realtime.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@supabase/supabase-js": "^2.45.0",
     "lucide-react": "^1.38.0",
     "next": "16.3.2",
     "react": "19.2.8",

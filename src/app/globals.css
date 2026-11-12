@@ -1516,6 +1516,56 @@ summary:focus-visible {
   background: var(--acid);
 }
 
+.connection-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 10px;
+  color: var(--subtle);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.connection-indicator.compact {
+  width: 18px;
+  height: 18px;
+  justify-content: center;
+  margin: 0 2px;
+}
+
+.connection-dot {
+  width: 7px;
+  height: 7px;
+  display: inline-block;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.connection-indicator.live {
+  color: var(--acid);
+}
+
+.connection-indicator.live .connection-dot {
+  background: var(--acid);
+}
+
+.connection-indicator.connecting .connection-dot {
+  animation: save-pulse 1s ease-in-out infinite;
+}
+
+.connection-indicator.offline {
+  color: var(--coral);
+}
+
+.connection-indicator.offline .connection-dot {
+  background: var(--coral);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .connection-indicator.connecting .connection-dot { animation: none; }
+}
+
 .modal-backdrop,
 .search-overlay {
   position: fixed;

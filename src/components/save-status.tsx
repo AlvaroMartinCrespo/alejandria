@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
+import type { RealtimeStatus } from "@/lib/use-realtime-sync";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -166,6 +167,38 @@ export function SaveIndicator({ state }: { state: SaveState }) {
           No se actualizó
         </>
       )}
+    </span>
+  );
+}
+
+const CONNECTION_LABELS: Record<Exclude<RealtimeStatus, "off">, string> = {
+  live: "En vivo",
+  connecting: "Conectando…",
+  offline: "Sin conexión en vivo",
+};
+
+const CONNECTION_HINTS: Record<Exclude<RealtimeStatus, "off">, string> = {
+  live: "Los cambios de otros dispositivos aparecen al instante.",
+  connecting: "Conectando con el canal de tiempo real.",
+  offline: "Sin canal en vivo: la app se actualiza al volver a la pestaña y cada pocos segundos.",
+};
+
+/**
+ * Estado del canal de tiempo real. No pinta nada si no hay tiempo real (modo local o sin
+ * variables `NEXT_PUBLIC_*`). `compact` muestra solo el punto (cabecera, visible en móvil).
+ */
+export function ConnectionIndicator({ state, compact = false }: { state: RealtimeStatus; compact?: boolean }) {
+  if (state === "off") return null;
+  return (
+    <span
+      className={`connection-indicator ${state}${compact ? " compact" : ""}`}
+      role="status"
+      aria-live="polite"
+      aria-label={CONNECTION_LABELS[state]}
+      title={`${CONNECTION_LABELS[state]}. ${CONNECTION_HINTS[state]}`}
+    >
+      <i className="connection-dot" aria-hidden="true" />
+      {!compact && CONNECTION_LABELS[state]}
     </span>
   );
 }

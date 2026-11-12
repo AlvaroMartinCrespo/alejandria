@@ -12,6 +12,10 @@ import {
 import { useLibrary } from "@/components/library-provider";
 import { normalizeAnime } from "@/lib/anime-utils";
 import type { AnimeChanges, AnimeInput } from "@/lib/anime-validation";
+import { applyChanges, sameContent, type ChangeEvent } from "@/lib/realtime-events";
+import { fromAnimeRow, type AnimeRow } from "@/lib/row-mappers";
+import { isTypingInField, sameData, useLiveRefresh } from "@/lib/use-live-refresh";
+import { useRealtimeSync } from "@/lib/use-realtime-sync";
 import type { Anime, AnimeStatus } from "@/types/anime";
 
 const ANIME_STORAGE_KEY = "alejandria-anime-v1";
@@ -19,6 +23,8 @@ const MIGRATION_MESSAGE = "Falta aplicar la migración de anime en Supabase";
 const PROGRESS_DEBOUNCE_MS = 400;
 const MAX_SEASON = 100;
 const MAX_EPISODE = 100000;
+/** Tope de eventos de tiempo real en cola mientras se edita; por encima se hace un refetch completo. */
+const MAX_QUEUED_EVENTS = 300;
 
 export type AddAnimeInput = Partial<AnimeInput> & { title: string };
 
@@ -67,6 +73,23 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
   const animeRef = useRef<Anime[]>([]);
   const pendingRef = useRef(new Map<string, PendingProgress>());
   const loadedModeRef = useRef<"supabase" | "local" | null>(null);
+  // Escrituras en vuelo y contador de cambios (ver `refreshAnime`).
+  const inflightWritesRef = useRef(0);
+  const writeEpochRef = useRef(0);
+  const eventQueueRef = useRef<ChangeEvent[]>([]);
+  const eventTimerRef = useRef<number | null>(null);
+  const lastRemoteNoticeRef = useRef(0);
+
+  /** `fetch` para escrituras: lo registra para que el refresco no choque con ello. */
+  function mutate(input: string, init?: RequestInit) {
+    inflightWritesRef.current += 1;
+    writeEpochRef.current += 1;
+    return fetch(input, init).finally(() => {
+      inflightWritesRef.current -= 1;
+      writeEpochRef.current += 1;
+      if (inflightWritesRef.current === 0) settle();
+    });
+  }
 
   function setList(next: Anime[]) {
     animeRef.current = next;
@@ -137,13 +160,86 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
     }
   }, [anime, animeLoading, storageMode]);
 
+  /**
+   * Opción 0 del plan de tiempo real: vuelve a pedir la lista y la aplica solo si cambió.
+   * Se omite con guardados en curso, progreso pendiente de enviar o un campo en edición.
+   */
+  async function refreshAnime() {
+    if (storageMode !== "supabase" || animeLoading) return;
+    if (inflightWritesRef.current > 0 || pendingRef.current.size > 0 || isTypingInField()) return;
+    const epoch = writeEpochRef.current;
+    try {
+      const response = await fetch("/api/anime", { cache: "no-store" });
+      const data = (await response.json().catch(() => null)) as { anime?: Anime[] } | null;
+      if (!response.ok || !data?.anime) return;
+      // Si durante la petición hubo un cambio propio, esta respuesta puede ser anterior a él.
+      if (epoch !== writeEpochRef.current || inflightWritesRef.current > 0 || pendingRef.current.size > 0 || isTypingInField()) return;
+      const next = data.anime.map(normalizeAnime);
+      if (!sameData(animeRef.current, next)) setList(next);
+      if (animeError) setAnimeError(null);
+    } catch {
+      // Sin red: se reintenta en el siguiente ciclo.
+    }
+  }
+
+  useLiveRefresh(refreshAnime, storageMode === "supabase" && !animeLoading);
+
+  const isBusy = () => inflightWritesRef.current > 0 || pendingRef.current.size > 0 || isTypingInField();
+
+  /** Tiempo real (Fase 4): aplica en bloque los cambios de anime hechos desde otro dispositivo. */
+  function flushRealtimeEvents() {
+    eventTimerRef.current = null;
+    if (!eventQueueRef.current.length) return;
+    // Con un guardado propio en curso o un campo en edición, los eventos esperan en cola
+    // y se aplican en `onIdle` (así no se pisa lo que se escribe ni se aplica el eco viejo).
+    if (isBusy()) return;
+    const queued = eventQueueRef.current;
+    eventQueueRef.current = [];
+    const next = applyChanges<AnimeRow, Anime>(animeRef.current, queued, fromAnimeRow, normalizeAnime);
+    // Si el resultado es igual a lo que ya se ve (eco de un cambio propio), no se toca nada.
+    if (next === animeRef.current || sameData(next, animeRef.current)) return;
+    const foreign = !sameContent(next, animeRef.current);
+    setList(next);
+    if (!foreign) return;
+    // Aviso discreto (como mucho cada 15 s) cuando llega un cambio hecho desde otro dispositivo.
+    const now = Date.now();
+    if (now - lastRemoteNoticeRef.current >= 15_000) {
+      lastRemoteNoticeRef.current = now;
+      showNotice("success", "Actualizado desde otro dispositivo.");
+    }
+  }
+
+  function handleRealtime(_table: string, event: ChangeEvent) {
+    eventQueueRef.current.push(event);
+    if (eventQueueRef.current.length > MAX_QUEUED_EVENTS) {
+      eventQueueRef.current = [];
+      markDirty(); // demasiados eventos acumulados: más barato volver a pedirlo todo
+      return;
+    }
+    if (!eventTimerRef.current) eventTimerRef.current = window.setTimeout(flushRealtimeEvents, 150);
+  }
+
+  const { markDirty, settle } = useRealtimeSync({
+    enabled: storageMode === "supabase" && !animeLoading,
+    channel: "alejandria-anime",
+    tables: ["anime"],
+    onChange: handleRealtime,
+    onIdle: flushRealtimeEvents,
+    resync: refreshAnime,
+    isBusy,
+  });
+
+  useEffect(() => () => {
+    if (eventTimerRef.current) window.clearTimeout(eventTimerRef.current);
+  }, []);
+
   async function flushProgress(id: string) {
     const entry = pendingRef.current.get(id);
     if (!entry) return;
     window.clearTimeout(entry.timer);
     pendingRef.current.delete(id);
     try {
-      const response = await fetch(`/api/anime/${id}`, {
+      const response = await mutate(`/api/anime/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(entry.changes),
@@ -192,7 +288,7 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
     };
 
     if (storageMode === "supabase") {
-      const response = await fetch("/api/anime", {
+      const response = await mutate("/api/anime", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(draft),
@@ -203,7 +299,10 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
         throw new Error(data?.error || "No se pudo guardar el anime.");
       }
       const created = normalizeAnime((await response.json()) as Anime);
-      setList([...animeRef.current, created]);
+      // El evento de tiempo real del propio INSERT puede llegar antes que esta respuesta.
+      setList(animeRef.current.some((item) => item.$id === created.$id)
+        ? animeRef.current.map((item) => (item.$id === created.$id ? created : item))
+        : [...animeRef.current, created]);
       showNotice("success", "Anime añadido.");
       return created;
     }
@@ -227,7 +326,7 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
     if (storageMode === "supabase") {
       let ok = false;
       try {
-        const response = await fetch(`/api/anime/${id}`, {
+        const response = await mutate(`/api/anime/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(changes),
@@ -274,7 +373,7 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
     if (storageMode === "supabase") {
       let ok = false;
       try {
-        ok = (await fetch(`/api/anime/${id}`, { method: "DELETE" })).ok;
+        ok = (await mutate(`/api/anime/${id}`, { method: "DELETE" })).ok;
       } catch {
         ok = false;
       }
@@ -310,7 +409,7 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
     if (storageMode === "supabase") {
       let ok = false;
       try {
-        const response = await fetch("/api/anime/reorder", {
+        const response = await mutate("/api/anime/reorder", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ moves: Array.from(changes, ([moveId, order]) => ({ id: moveId, order })) }),
@@ -377,7 +476,7 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const imported = await fetch("/api/anime/import", {
+      const imported = await mutate("/api/anime/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ format: "alejandria-library-backup", version: 3, anime: value }),

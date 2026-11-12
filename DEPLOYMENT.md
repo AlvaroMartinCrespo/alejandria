@@ -147,3 +147,30 @@ Al final de **Estadísticas** hay un bloque «Copia por correo» con la fecha de
 ### Pruebas
 
 `npm test` incluye `scripts/test-email.mjs` (Resend con `fetch` simulado) y `scripts/test-backup-run.mjs` (plazo de 14 días, zona horaria, errores, reintento, límite de tamaño).
+
+## 4 quater. Sincronización entre dispositivos (instalaciones existentes)
+
+Dos capas, ambas opcionales y sin tocar las rutas `/api/*`:
+
+1. **Refresco automático (sin configuración).** Con Supabase, cada pestaña vuelve a pedir los datos al recuperar el foco o la conexión y cada ~45 s mientras está visible. Se omite si hay un guardado en curso o si estás escribiendo en un campo, para no pisar tus cambios.
+2. **Tiempo real con Supabase Realtime (preparación).** Pega `supabase/migration-realtime.sql` en **Supabase → SQL Editor → Run** (aditiva e idempotente: publica `books`, `collections`, `anime`, `reading_log` y `reading_marks` y concede a `anon` **solo `SELECT`**). Después añade en `.env.local` y en Vercel (Production, Preview y Development):
+
+```text
+NEXT_PUBLIC_SUPABASE_URL      # la misma URL que SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY # clave anon / publishable (pública por diseño)
+```
+
+Con las variables presentes, la app abre un canal de Realtime por provider (libros/carpetas/historial y anime): los cambios de otro dispositivo aparecen en menos de un segundo. Si faltan, funciona solo con el refresco automático. Mientras se guarda algo o se escribe en un campo, los eventos esperan en cola y se aplican al terminar; al reconectar tras una caída se vuelve a pedir todo. Quien conozca URL + anon key podrá **leer** esas tablas (no escribir). Nunca uses el prefijo `NEXT_PUBLIC_` con la `service_role`. Tras pegar el `package.json` nuevo ejecuta `npm install` para instalar `@supabase/supabase-js` y actualizar `package-lock.json`.
+
+### Prueba manual del tiempo real (dos ventanas, una en incógnito)
+
+1. Cambia el progreso de un libro en A → aparece en B sin recargar (y un aviso «Actualizado desde otro dispositivo»).
+2. Añade y borra un libro y un anime en A.
+3. Reordena «Quiero leer» en A: B se reordena de una vez, sin parpadeos.
+4. Pon B en modo avión, cambia algo en A y reconecta B: se actualiza solo (el punto de la cabecera pasa de rojo a verde).
+5. Edita el mismo libro en ambos a la vez: gana el último en guardar, campo a campo.
+6. Escribe en las notas en B mientras A cambia ese libro: lo que escribes no se pisa; el cambio de A se aplica ~1,5 s después de salir del campo.
+7. Bloquea la edición en B (modo lectura): sigue recibiendo cambios.
+
+El punto de la cabecera (y el texto del pie en escritorio) indica el canal: verde «En vivo», pulsante «Conectando…», rojo «Sin conexión en vivo». Sin variables `NEXT_PUBLIC_*` no se muestra.
+

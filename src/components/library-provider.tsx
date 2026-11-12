@@ -14,6 +14,10 @@ import { parseActivityBackup, parseMarksBackup } from "@/lib/activity-validation
 import { googleResultToBook, normalizeBook } from "@/lib/book-utils";
 import { parseBookBackup } from "@/lib/book-validation";
 import { applyIncoming, describeChange, todayInZone } from "@/lib/reading-activity";
+import { applyChanges, sameContent, type ChangeEvent } from "@/lib/realtime-events";
+import { fromBookRow, fromCollectionRow, type BookRow, type CollectionRow } from "@/lib/row-mappers";
+import { isTypingInField, sameData, useLiveRefresh } from "@/lib/use-live-refresh";
+import { useRealtimeSync, type RealtimeStatus } from "@/lib/use-realtime-sync";
 import type { ReadingLogEntry } from "@/types/activity";
 import type { Book, BookStatus, Collection, GoogleBookResult } from "@/types/book";
 
@@ -22,6 +26,8 @@ const COLLECTIONS_STORAGE_KEY = "alejandria-collections-v1";
 const ACTIVITY_STORAGE_KEY = "alejandria-activity-v1";
 const MARKS_STORAGE_KEY = "alejandria-marks-v1";
 const LEGACY_STORAGE_KEY = "mi-biblioteca-v1";
+/** Tope de eventos de tiempo real en cola mientras se edita; por encima se hace un refetch completo. */
+const MAX_QUEUED_EVENTS = 300;
 
 type BookChanges = Partial<Omit<Book, "$id" | "googleBooksId" | "addedAt">>;
 
@@ -46,6 +52,8 @@ interface LibraryContextValue {
   editorChecked: boolean;
   editorConfigured: boolean;
   storageMode: "supabase" | "local";
+  /** Estado del canal de tiempo real (`off` en modo local o sin variables `NEXT_PUBLIC_*`). */
+  realtime: RealtimeStatus;
   notice: { type: "success" | "error"; message: string } | null;
   clearNotice: () => void;
   showNotice: (type: "success" | "error", message: string) => void;
@@ -76,6 +84,16 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   // Copia síncrona de `books`: el autosave dispara varios guardados seguidos y el
   // cierre de `updateBook` podría ver un progreso anterior al real.
   const booksRef = useRef<Book[]>([]);
+  // Escrituras en vuelo y contador de cambios: el refresco periódico se omite (o se descarta)
+  // si hay un guardado en curso, para no pisar con datos viejos un cambio recién hecho.
+  const inflightWritesRef = useRef(0);
+  const writeEpochRef = useRef(0);
+  // Eventos de tiempo real pendientes de aplicar en bloque (el reordenado genera N UPDATE).
+  const eventQueueRef = useRef<Array<{ table: string; event: ChangeEvent }>>([]);
+  const eventTimerRef = useRef<number | null>(null);
+  const activityTimerRef = useRef<number | null>(null);
+  const activityPendingRef = useRef(false);
+  const lastRemoteNoticeRef = useRef(0);
   const [editing, setEditing] = useState(false);
   const [editorChecked, setEditorChecked] = useState(false);
   const [editorConfigured, setEditorConfigured] = useState(false);
@@ -85,6 +103,17 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     booksRef.current = books;
   }, [books]);
+
+  /** `fetch` para escrituras (POST/PATCH/DELETE): lo registra para que el refresco no choque con ello. */
+  function mutate(input: string, init?: RequestInit) {
+    inflightWritesRef.current += 1;
+    writeEpochRef.current += 1;
+    return fetch(input, init).finally(() => {
+      inflightWritesRef.current -= 1;
+      writeEpochRef.current += 1;
+      if (inflightWritesRef.current === 0) settle();
+    });
+  }
 
   function showNotice(type: "success" | "error", message: string) {
     setNotice({ type, message });
@@ -188,13 +217,144 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  /**
+   * Opción 0 del plan de tiempo real: vuelve a pedir libros, carpetas e historial y los
+   * aplica solo si cambiaron. Se omite con guardados en curso o si se está escribiendo.
+   */
+  async function refreshLibrary() {
+    if (storageMode !== "supabase" || loading) return;
+    if (inflightWritesRef.current > 0 || isTypingInField()) return;
+    const epoch = writeEpochRef.current;
+    try {
+      const response = await fetch("/api/books", { cache: "no-store" });
+      if (!response.ok) return;
+      const data = (await response.json()) as { books: Book[]; collections: Collection[] };
+      const history = await fetchActivity();
+      // Si durante la petición hubo un cambio propio, esta respuesta puede ser anterior a él.
+      if (epoch !== writeEpochRef.current || inflightWritesRef.current > 0 || isTypingInField()) return;
+      const nextBooks = data.books.map(normalizeBook);
+      startTransition(() => {
+        if (!sameData(booksRef.current, nextBooks)) {
+          booksRef.current = nextBooks;
+          setBooks(nextBooks);
+        }
+        if (!sameData(collections, data.collections)) setCollections(data.collections);
+        if (history) {
+          if (!sameData(activity, history.entries)) setActivity(history.entries);
+          if (!sameData(markedDays, history.marks)) setMarkedDays(history.marks);
+          if (!sameData(historyMissing, history.missing)) setHistoryMissing(history.missing);
+        }
+      });
+    } catch {
+      // Sin red: se reintenta en el siguiente ciclo.
+    }
+  }
+
+  useLiveRefresh(refreshLibrary, storageMode === "supabase" && !loading);
+
+  /** Tiempo real (Fase 4): aplica en bloque los cambios de libros y carpetas hechos desde otro dispositivo. */
+  function flushRealtimeEvents() {
+    eventTimerRef.current = null;
+    if (!eventQueueRef.current.length) return;
+    // Con un guardado propio en vuelo o un campo en edición, los eventos esperan en cola
+    // y se aplican en `onIdle` (así no se pisa lo que se escribe ni se aplica el eco viejo).
+    if (inflightWritesRef.current > 0 || isTypingInField()) return;
+    const queued = eventQueueRef.current;
+    eventQueueRef.current = [];
+    const bookEvents = queued.filter((item) => item.table === "books").map((item) => item.event);
+    const collectionEvents = queued.filter((item) => item.table === "collections").map((item) => item.event);
+
+    if (bookEvents.length) {
+      const nextBooks = applyChanges<BookRow, Book>(booksRef.current, bookEvents, fromBookRow, normalizeBook);
+      // Si el resultado es igual a lo que ya se ve (eco de un cambio propio), no se toca nada.
+      if (nextBooks !== booksRef.current && !sameData(nextBooks, booksRef.current)) {
+        const foreign = !sameContent(nextBooks, booksRef.current);
+        booksRef.current = nextBooks;
+        setBooks(nextBooks);
+        if (foreign) announceRemoteChange();
+      }
+      const deleted = new Set(
+        bookEvents.filter((event) => event.eventType === "DELETE").map((event) => String(event.old.id)),
+      );
+      // El historial del libro desaparece con él (`on delete cascade`).
+      if (deleted.size) setActivity((current) => current.filter((entry) => !deleted.has(entry.bookId)));
+    }
+    if (collectionEvents.length) {
+      setCollections((current) => {
+        const next = applyChanges<CollectionRow, Collection>(current, collectionEvents, fromCollectionRow);
+        return sameData(next, current) ? current : next;
+      });
+      const deleted = new Set(
+        collectionEvents.filter((event) => event.eventType === "DELETE").map((event) => String(event.old.id)),
+      );
+      if (deleted.size) {
+        const detached = booksRef.current.map((book) =>
+          book.collectionId && deleted.has(book.collectionId) ? { ...book, collectionId: null } : book);
+        booksRef.current = detached;
+        setBooks(detached);
+      }
+    }
+  }
+
+  /** Aviso discreto (como mucho cada 15 s) cuando llega un cambio hecho desde otro dispositivo. */
+  function announceRemoteChange() {
+    const now = Date.now();
+    if (now - lastRemoteNoticeRef.current < 15_000) return;
+    lastRemoteNoticeRef.current = now;
+    showNotice("success", "Actualizado desde otro dispositivo.");
+  }
+
+  function flushActivity() {
+    if (!activityPendingRef.current || inflightWritesRef.current > 0) return;
+    activityPendingRef.current = false;
+    void refreshActivity();
+  }
+
+  function handleRealtime(table: string, event: ChangeEvent) {
+    if (table === "reading_log" || table === "reading_marks") {
+      // El servidor calcula el historial: no se mapea evento a evento, se vuelve a pedir.
+      if (activityTimerRef.current) window.clearTimeout(activityTimerRef.current);
+      activityPendingRef.current = true;
+      activityTimerRef.current = window.setTimeout(() => {
+        activityTimerRef.current = null;
+        flushActivity();
+      }, 500);
+      return;
+    }
+    eventQueueRef.current.push({ table, event });
+    if (eventQueueRef.current.length > MAX_QUEUED_EVENTS) {
+      eventQueueRef.current = [];
+      markDirty(); // demasiados eventos acumulados: más barato volver a pedirlo todo
+      return;
+    }
+    if (!eventTimerRef.current) eventTimerRef.current = window.setTimeout(flushRealtimeEvents, 150);
+  }
+
+  const { status: realtime, markDirty, settle } = useRealtimeSync({
+    enabled: storageMode === "supabase" && !loading,
+    channel: "alejandria-library",
+    tables: ["books", "collections", "reading_log", "reading_marks"],
+    onChange: handleRealtime,
+    onIdle: () => {
+      flushRealtimeEvents();
+      flushActivity();
+    },
+    resync: refreshLibrary,
+    isBusy: () => inflightWritesRef.current > 0 || isTypingInField(),
+  });
+
+  useEffect(() => () => {
+    if (eventTimerRef.current) window.clearTimeout(eventTimerRef.current);
+    if (activityTimerRef.current) window.clearTimeout(activityTimerRef.current);
+  }, []);
+
   async function changeMarks(add: string[], remove: string[]) {
     requireEditing();
     const previous = markedDays;
     const removed = new Set(remove);
     setMarkedDays((current) => Array.from(new Set([...current.filter((day) => !removed.has(day)), ...add])).sort());
     if (storageMode !== "supabase") return;
-    const response = await fetch("/api/activity/marks", {
+    const response = await mutate("/api/activity/marks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ add, remove }),
@@ -259,14 +419,18 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     }
 
     if (storageMode === "supabase") {
-      const response = await fetch("/api/books", {
+      const response = await mutate("/api/books", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(result),
       });
       if (!response.ok) throw new Error("No se pudo guardar el libro.");
       const book = normalizeBook((await response.json()) as Book);
-      setBooks((current) => [...current, book]);
+      // El evento de tiempo real del propio INSERT puede llegar antes que esta respuesta.
+      setBooks((current) =>
+        current.some((item) => item.$id === book.$id)
+          ? current.map((item) => (item.$id === book.$id ? book : item))
+          : [...current, book]);
       showNotice("success", "Libro añadido a Quiero leer.");
       return book;
     }
@@ -295,7 +459,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     }
 
     if (storageMode === "supabase") {
-      const response = await fetch(`/api/books/${id}`, {
+      const response = await mutate(`/api/books/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(changes),
@@ -336,7 +500,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     // El historial del libro desaparece con él (en Supabase lo hace `on delete cascade`).
     setActivity((current) => current.filter((entry) => entry.bookId !== id));
     if (storageMode === "supabase") {
-      const response = await fetch(`/api/books/${id}`, { method: "DELETE" });
+      const response = await mutate(`/api/books/${id}`, { method: "DELETE" });
       if (!response.ok) {
         setBooks(previous);
         setActivity(previousActivity);
@@ -354,14 +518,17 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       setCollections((current) => [...current, { $id: crypto.randomUUID(), name: trimmedName, order: current.length }]);
       return;
     }
-    const response = await fetch("/api/collections", {
+    const response = await mutate("/api/collections", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: trimmedName }),
     });
     if (!response.ok) throw new Error("No se pudo crear la carpeta.");
     const collection = (await response.json()) as Collection;
-    setCollections((current) => [...current, collection]);
+    setCollections((current) =>
+      current.some((item) => item.$id === collection.$id)
+        ? current.map((item) => (item.$id === collection.$id ? collection : item))
+        : [...current, collection]);
   }
 
   async function renameCollection(id: string, name: string) {
@@ -371,7 +538,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     const previous = collections;
     setCollections((current) => current.map((collection) => collection.$id === id ? { ...collection, name: trimmedName } : collection));
     if (storageMode === "supabase") {
-      const response = await fetch(`/api/collections/${id}`, {
+      const response = await mutate(`/api/collections/${id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: trimmedName }),
       });
       if (!response.ok) {
@@ -389,7 +556,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     setCollections((current) => current.filter((collection) => collection.$id !== id));
     setBooks((current) => current.map((book) => book.collectionId === id ? { ...book, collectionId: null } : book));
     if (storageMode === "supabase") {
-      const response = await fetch(`/api/collections/${id}`, { method: "DELETE" });
+      const response = await mutate(`/api/collections/${id}`, { method: "DELETE" });
       if (!response.ok) {
         setBooks(previousBooks);
         setCollections(previousCollections);
@@ -410,7 +577,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     const previous = collections;
     setCollections(reordered);
     if (storageMode === "supabase") {
-      const responses = await Promise.all(reordered.map((collection) => fetch(`/api/collections/${collection.$id}`, {
+      const responses = await Promise.all(reordered.map((collection) => mutate(`/api/collections/${collection.$id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ order: collection.order }),
       })));
       if (responses.some((response) => !response.ok)) {
@@ -444,7 +611,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       return change ? { ...book, ...change } : book;
     }));
     if (storageMode === "supabase") {
-      const response = await fetch("/api/books/reorder", {
+      const response = await mutate("/api/books/reorder", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ moves: Array.from(changes, ([id, change]) => ({ id, ...change })) }),
       });
@@ -493,7 +660,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const importedResponse = await fetch("/api/books/import", {
+      const importedResponse = await mutate("/api/books/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ format: "alejandria-library-backup", version: 2, books: imported.books, collections: imported.collections }),
@@ -501,7 +668,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       if (!importedResponse.ok) throw new Error();
       // Va después de los libros: el historial depende de que existan.
       if (importedActivity.length || importedMarks.length) {
-        const activityResponse = await fetch("/api/activity/import", {
+        const activityResponse = await mutate("/api/activity/import", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ activity: importedActivity, marks: importedMarks }),
@@ -563,6 +730,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         editorChecked,
         editorConfigured,
         storageMode,
+        realtime,
         notice,
         clearNotice: () => setNotice(null),
         showNotice,

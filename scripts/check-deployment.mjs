@@ -26,6 +26,12 @@ try {
   const passed = response.ok && data.status === "ok";
   console.log(`${passed ? "✓" : "✗"} /api/health (${data.supabase || response.status})`);
   if (!data.googleBooksKey) console.log("! GOOGLE_BOOKS_API_KEY no configurada; se usará la cuota pública.");
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.log("✓ Variables de tiempo real presentes en este entorno (NEXT_PUBLIC_SUPABASE_URL / _ANON_KEY).");
+  } else {
+    console.log("! NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY no definidas aquí: sin tiempo real (la app sigue funcionando; se refresca al volver a la pestaña).");
+    console.log("  Si ya las pusiste en Vercel, ignora este aviso: este script solo ve las de tu terminal.");
+  }
   failed ||= !passed;
 } catch (error) {
   console.log(`✗ /api/health (${error instanceof Error ? error.message : "respuesta no válida"})`);

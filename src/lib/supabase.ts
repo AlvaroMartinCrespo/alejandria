@@ -3,6 +3,14 @@ import "server-only";
 import type { ReadingEvent, ReadingLogEntry } from "@/types/activity";
 import type { Anime } from "@/types/anime";
 import type { Book, Collection, GoogleBookResult } from "@/types/book";
+import {
+  fromAnimeRow,
+  fromBookRow,
+  fromCollectionRow,
+  type AnimeRow,
+  type BookRow,
+  type CollectionRow,
+} from "@/lib/row-mappers";
 
 const BOOK_COLUMNS = [
   "id",
@@ -26,36 +34,6 @@ const BOOK_COLUMNS = [
   "created_at",
   "updated_at",
 ].join(",");
-
-type BookRow = {
-  id: string;
-  google_books_id: string;
-  title: string;
-  authors: string[];
-  cover_url: string | null;
-  published_year: number | null;
-  page_count: number | null;
-  synopsis: string;
-  status: Book["status"];
-  favorite: boolean;
-  sort_order: number | null;
-  collection_id: string | null;
-  rating: number | null;
-  finished_year: number | null;
-  finished_month: number | null;
-  added_at: string;
-  progress: number;
-  notes: string;
-  created_at?: string;
-  updated_at?: string;
-};
-
-type CollectionRow = {
-  id: string;
-  name: string;
-  sort_order: number;
-  created_at?: string;
-};
 
 function getConfig() {
   const url = process.env.SUPABASE_URL?.replace(/\/$/, "");
@@ -92,31 +70,6 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (body ? JSON.parse(body) : undefined) as T;
 }
 
-function fromRow(row: BookRow): Book {
-  return {
-    $id: row.id,
-    googleBooksId: row.google_books_id,
-    title: row.title,
-    authors: row.authors,
-    coverUrl: row.cover_url,
-    publishedYear: row.published_year,
-    pageCount: row.page_count,
-    synopsis: row.synopsis,
-    status: row.status,
-    favorite: row.favorite,
-    order: row.sort_order,
-    collectionId: row.collection_id,
-    rating: row.rating,
-    finishedYear: row.finished_year,
-    finishedMonth: row.finished_month,
-    addedAt: row.added_at,
-    progress: row.progress,
-    notes: row.notes,
-    ...(row.created_at ? { createdAt: row.created_at } : {}),
-    ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
-  };
-}
-
 export function toRow(book: Book): BookRow {
   return {
     id: book.$id,
@@ -148,7 +101,7 @@ export async function listBooks() {
     const rows = await request<BookRow[]>(
       `books?select=${BOOK_COLUMNS}&order=added_at.asc&offset=${offset}&limit=${pageSize}`,
     );
-    books.push(...rows.map(fromRow));
+    books.push(...rows.map(fromBookRow));
     if (rows.length < pageSize) return books;
   }
 }
@@ -173,7 +126,7 @@ export async function createBook(result: GoogleBookResult) {
     headers: { Prefer: "return=representation" },
     body: JSON.stringify(toRow(book)),
   });
-  return fromRow(rows[0]);
+  return fromBookRow(rows[0]);
 }
 
 export async function updateBook(
@@ -209,16 +162,7 @@ export async function updateBook(
     },
   );
   if (!rows[0]) throw new Error("El libro no existe");
-  return fromRow(rows[0]);
-}
-
-function fromCollectionRow(row: CollectionRow): Collection {
-  return {
-    $id: row.id,
-    name: row.name,
-    order: row.sort_order,
-    ...(row.created_at ? { createdAt: row.created_at } : {}),
-  };
+  return fromBookRow(rows[0]);
 }
 
 export async function listCollections() {
@@ -346,68 +290,12 @@ const ANIME_COLUMNS = [
   "updated_at",
 ].join(",");
 
-type AnimeRow = {
-  id: string;
-  source_id: string;
-  title: string;
-  title_japanese: string;
-  cover_url: string | null;
-  release_year: number | null;
-  media_format: string;
-  genres: string[];
-  synopsis: string;
-  status: Anime["status"];
-  favorite: boolean;
-  rating: number | null;
-  current_season: number;
-  current_episode: number;
-  total_episodes: number | null;
-  total_seasons: number | null;
-  finished_year: number | null;
-  finished_month: number | null;
-  last_watched_at: string | null;
-  sort_order: number | null;
-  notes: string;
-  added_at: string;
-  created_at?: string;
-  updated_at?: string;
-};
-
 /** Se lanza al crear un anime cuyo `source_id` ya existe (las rutas lo traducen a 409). */
 export class AnimeDuplicateError extends Error {
   constructor() {
     super("Este anime ya está en tu lista");
     this.name = "AnimeDuplicateError";
   }
-}
-
-function fromAnimeRow(row: AnimeRow): Anime {
-  return {
-    $id: row.id,
-    sourceId: row.source_id,
-    title: row.title,
-    titleJapanese: row.title_japanese,
-    coverUrl: row.cover_url,
-    releaseYear: row.release_year,
-    mediaFormat: row.media_format,
-    genres: row.genres,
-    synopsis: row.synopsis,
-    status: row.status,
-    favorite: row.favorite,
-    rating: row.rating,
-    currentSeason: row.current_season,
-    currentEpisode: row.current_episode,
-    totalEpisodes: row.total_episodes,
-    totalSeasons: row.total_seasons,
-    finishedYear: row.finished_year,
-    finishedMonth: row.finished_month,
-    lastWatchedAt: row.last_watched_at,
-    order: row.sort_order,
-    notes: row.notes,
-    addedAt: row.added_at,
-    ...(row.created_at ? { createdAt: row.created_at } : {}),
-    ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
-  };
 }
 
 function toAnimeRow(anime: Anime): AnimeRow {

@@ -11,12 +11,13 @@ import { Hanko } from "@/components/hanko";
 import { AnimeCover } from "@/components/anime-cover";
 import { AnimeProvider, useAnime } from "@/components/anime-provider";
 import { LibraryProvider, useLibrary } from "@/components/library-provider";
+import { ConnectionIndicator } from "@/components/save-status";
 import { ANIME_STATUS_LABELS } from "@/lib/anime-utils";
 import { STATUS_LABELS } from "@/lib/book-utils";
 
 function ShellContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { books, editing, editorChecked, editorConfigured, storageMode, notice, clearNotice, lock, unlock } = useLibrary();
+  const { books, editing, editorChecked, editorConfigured, storageMode, realtime, notice, clearNotice, lock, unlock } = useLibrary();
   const { anime } = useAnime();
   const onAnime = pathname.startsWith("/anime");
   const addLabel = onAnime ? "Añadir anime" : "Añadir libro";
@@ -96,6 +97,7 @@ function ShellContent({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <div className="header-actions">
+          <ConnectionIndicator state={realtime} compact />
           <button className="icon-button" onClick={() => setSearchOpen(true)} aria-label="Buscar en mi biblioteca"><Search size={18} /></button>
           <button className="icon-button" onClick={() => editing ? void lock() : setLockOpen(true)} aria-label={editing ? "Bloquear edición" : "Desbloquear edición"} title={editing ? "Bloquear edición" : "Desbloquear edición"}>
             {editing ? <Unlock size={18} /> : <Lock size={18} />}
@@ -128,7 +130,11 @@ function ShellContent({ children }: { children: ReactNode }) {
         </Link>
       </nav>
       <footer className="app-footer">
-        <span><i className={storageMode === "supabase" ? "online" : ""} />{storageMode === "supabase" ? "Sincronizado con Supabase" : "Guardado en este dispositivo"}</span>
+        <span>
+          <i className={storageMode === "supabase" ? "online" : ""} />
+          {storageMode === "supabase" ? "Sincronizado con Supabase" : "Guardado en este dispositivo"}
+          <ConnectionIndicator state={realtime} />
+        </span>
         <span>{books.length} {books.length === 1 ? "libro" : "libros"} · {anime.length} {anime.length === 1 ? "anime" : "animes"}</span>
       </footer>
 
