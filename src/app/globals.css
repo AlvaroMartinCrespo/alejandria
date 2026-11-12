@@ -5278,6 +5278,19 @@ svg.lucide:not([stroke-width="3"]) {
   margin-right: 6px;
 }
 
+.calendar-pages {
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.calendar-summary-note {
+  display: block;
+  margin-top: 4px;
+  color: var(--subtle);
+  font-size: 11px;
+}
+
 .calendar-badge {
   padding: 2px 9px;
   color: var(--muted);

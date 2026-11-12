@@ -89,6 +89,19 @@ export function progressDelta(entry: Pick<ReadingLogEntry, "progressFrom" | "pro
   return entry.progressTo - entry.progressFrom;
 }
 
+/**
+ * Páginas leídas ese día en un libro: avance neto (en %) × páginas del libro, redondeado.
+ * Devuelve 0 si el libro no tiene páginas registradas o si el progreso se corrigió a la baja.
+ */
+export function pagesReadOf(
+  entry: Pick<ReadingLogEntry, "progressFrom" | "progressTo">,
+  pageCount: number | null | undefined,
+): number {
+  if (!pageCount || pageCount <= 0) return 0;
+  const delta = progressDelta(entry);
+  return delta > 0 ? Math.round((delta / 100) * pageCount) : 0;
+}
+
 export function groupByDay(entries: ReadingLogEntry[]): Map<string, ReadingLogEntry[]> {
   const map = new Map<string, ReadingLogEntry[]>();
   for (const entry of entries) {

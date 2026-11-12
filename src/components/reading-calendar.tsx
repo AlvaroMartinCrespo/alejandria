@@ -11,6 +11,7 @@ import {
   daysInMonth,
   formatDay,
   groupByDay,
+  pagesReadOf,
   parseDay,
   progressDelta,
   streaks,
@@ -49,9 +50,9 @@ function levelOf(entries: ReadingLogEntry[]) {
   return 1;
 }
 
-function summaryLabel(entries: ReadingLogEntry[]) {
+function summaryLabel(entries: ReadingLogEntry[], pages: number) {
   const gain = gainOf(entries);
-  return `${plural(entries.length, "libro", "libros")}${gain > 0 ? `, +${gain} %` : ""}`;
+  return `${plural(entries.length, "libro", "libros")}${gain > 0 ? `, +${gain} %` : ""}${pages > 0 ? `, ${plural(pages, "página", "páginas")}` : ""}`;
 }
 
 export function ReadingCalendar({ books, activity }: { books: Book[]; activity: ReadingLogEntry[] }) {
@@ -94,6 +95,13 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
   const monthDays = cells.filter((day): day is string => day !== null && readDays.has(day));
   const monthEntries = monthDays.flatMap((day) => byDay.get(day) ?? []);
   const monthBooks = new Set(monthEntries.map((entry) => entry.bookId)).size;
+  const monthPages = monthEntries.reduce((sum, entry) => sum + pagesReadOf(entry, booksById.get(entry.bookId)?.pageCount), 0);
+  // Libros con avance en el mes pero sin número de páginas: no pueden sumar páginas.
+  const monthWithoutPages = new Set(
+    monthEntries
+      .filter((entry) => progressDelta(entry) > 0 && !booksById.get(entry.bookId)?.pageCount)
+      .map((entry) => entry.bookId),
+  ).size;
   const { current, longest } = useMemo(() => streaks(Array.from(readDays), today), [readDays, today]);
 
   function goToMonth(delta: number) {
@@ -182,8 +190,9 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
               const finished = entries.some((entry) => entry.events.includes("finished"));
               const onlyMarked = !entries.length && marked.has(day);
               const isSelected = day === selected;
+              const dayPages = entries.reduce((sum, entry) => sum + pagesReadOf(entry, booksById.get(entry.bookId)?.pageCount), 0);
               const label = entries.length
-                ? `${dayLabel(day)}, ${summaryLabel(entries)}${finished ? ", libro terminado" : ""}`
+                ? `${dayLabel(day)}, ${summaryLabel(entries, dayPages)}${finished ? ", libro terminado" : ""}`
                 : onlyMarked
                   ? `${dayLabel(day)}, marcado como leído`
                   : `${dayLabel(day)}, sin lecturas`;
@@ -216,6 +225,11 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
       <dl className="calendar-summary" aria-label={`Resumen de ${MONTH_NAMES[cursor.month - 1].toLowerCase()}`}>
         <div><dt>Días leídos</dt><dd>{monthDays.length}</dd></div>
         <div><dt>Libros distintos</dt><dd>{monthBooks}</dd></div>
+        <div>
+          <dt>Páginas leídas</dt>
+          <dd>{monthPages.toLocaleString("es")}</dd>
+          {monthWithoutPages > 0 && <small className="calendar-summary-note">{plural(monthWithoutPages, "libro sin páginas", "libros sin páginas")} no suma{monthWithoutPages === 1 ? "" : "n"}</small>}
+        </div>
         <div><dt>Racha actual</dt><dd>{plural(current, "día", "días")}</dd></div>
         <div><dt>Racha máxima</dt><dd>{plural(longest, "día", "días")}</dd></div>
       </dl>
@@ -228,6 +242,7 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
               const book = booksById.get(entry.bookId);
               if (!book) return null;
               const delta = progressDelta(entry);
+              const pages = pagesReadOf(entry, book.pageCount);
               const touchedProgress = entry.events.includes("progress");
               const started = entry.events.includes("started");
               const finished = entry.events.includes("finished");
@@ -242,6 +257,9 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
                     <div className="calendar-badges">
                       {touchedProgress && delta > 0 && (
                         <strong className="calendar-gain">+{delta} %<small> de {entry.progressFrom} % a {entry.progressTo} %</small></strong>
+                      )}
+                      {touchedProgress && delta > 0 && pages > 0 && (
+                        <span className="calendar-pages">{plural(pages, "página", "páginas")}</span>
                       )}
                       {touchedProgress && delta <= 0 && <span className="calendar-badge">Progreso ajustado</span>}
                       {started && <span className="calendar-badge">Empezado</span>}

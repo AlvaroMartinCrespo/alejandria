@@ -5,7 +5,7 @@ import { register } from "node:module";
 
 register("./alias-loader.mjs", import.meta.url);
 const {
-  addDays, applyIncoming, compareRecentlyRead, lastFinishedDays, describeChange, groupByDay, mergeEntry, progressDelta, streaks, todayInZone,
+  addDays, applyIncoming, compareRecentlyRead, lastFinishedDays, describeChange, groupByDay, mergeEntry, pagesReadOf, progressDelta, streaks, todayInZone,
 } = await import("../src/lib/reading-activity.ts");
 const { parseActivityBackup, parseMarksBackup } = await import("../src/lib/activity-validation.ts");
 
@@ -35,6 +35,18 @@ test("varios guardados el mismo día dejan una fila 20 → 33", () => {
 test("retroceso (corrección a la baja) da delta negativo", () => {
   let e = log([], "b", "2026-11-10", { progress: 40 }, { status: "reading", progress: 50 });
   assert.equal(progressDelta(e[0]), -10);
+});
+
+test("páginas del día = avance % × páginas del libro", () => {
+  assert.equal(pagesReadOf({ progressFrom: 20, progressTo: 33 }, 300), 39);
+  assert.equal(pagesReadOf({ progressFrom: 0, progressTo: 100 }, 250), 250);
+});
+
+test("páginas del día: sin páginas, sin progreso o a la baja dan 0", () => {
+  assert.equal(pagesReadOf({ progressFrom: 20, progressTo: 33 }, null), 0);
+  assert.equal(pagesReadOf({ progressFrom: 20, progressTo: 33 }, 0), 0);
+  assert.equal(pagesReadOf({ progressFrom: null, progressTo: 33 }, 300), 0);
+  assert.equal(pagesReadOf({ progressFrom: 50, progressTo: 40 }, 300), 0);
 });
 
 test("cambio a Leyendo registra started + status", () => {
