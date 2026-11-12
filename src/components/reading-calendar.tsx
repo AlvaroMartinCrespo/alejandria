@@ -102,6 +102,14 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
       .filter((entry) => progressDelta(entry) > 0 && !booksById.get(entry.bookId)?.pageCount)
       .map((entry) => entry.bookId),
   ).size;
+  // Páginas del día seleccionado (por defecto, hoy): solo ese día, no el mes.
+  const selectedDayEntries = byDay.get(selected) ?? [];
+  const selectedDayPages = selectedDayEntries.reduce((sum, entry) => sum + pagesReadOf(entry, booksById.get(entry.bookId)?.pageCount), 0);
+  const selectedDayWithoutPages = new Set(
+    selectedDayEntries
+      .filter((entry) => progressDelta(entry) > 0 && !booksById.get(entry.bookId)?.pageCount)
+      .map((entry) => entry.bookId),
+  ).size;
   const { current, longest } = useMemo(() => streaks(Array.from(readDays), today), [readDays, today]);
 
   function goToMonth(delta: number) {
@@ -227,6 +235,12 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
         <div><dt>Libros distintos</dt><dd>{monthBooks}</dd></div>
         <div>
           <dt>Páginas leídas</dt>
+          <dd>{selectedDayPages.toLocaleString("es")}</dd>
+          <small className="calendar-summary-note">{selected === today ? "Hoy" : dayLabel(selected)}</small>
+          {selectedDayWithoutPages > 0 && <small className="calendar-summary-note">{plural(selectedDayWithoutPages, "libro sin páginas", "libros sin páginas")} no suma{selectedDayWithoutPages === 1 ? "" : "n"}</small>}
+        </div>
+        <div>
+          <dt>Páginas del mes</dt>
           <dd>{monthPages.toLocaleString("es")}</dd>
           {monthWithoutPages > 0 && <small className="calendar-summary-note">{plural(monthWithoutPages, "libro sin páginas", "libros sin páginas")} no suma{monthWithoutPages === 1 ? "" : "n"}</small>}
         </div>

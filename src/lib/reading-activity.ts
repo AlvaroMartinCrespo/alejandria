@@ -102,6 +102,35 @@ export function pagesReadOf(
   return delta > 0 ? Math.round((delta / 100) * pageCount) : 0;
 }
 
+/**
+ * Páginas leídas en un año: las que se van registrando día a día (avance × páginas del libro)
+ * más, en los libros terminados ese año, las páginas que faltan por contar hasta completar el libro
+ * (lo leído antes de que existiera el registro, o el último tramo si no se subió el progreso al 100 %).
+ * Así cada página cuenta una sola vez y no hace falta esperar a terminar el libro para que sume.
+ */
+export function pagesReadInYear(books: Book[], activity: ReadingLogEntry[], year: number): number {
+  const prefix = `${year}-`;
+  const booksById = new Map(books.map((book) => [book.$id, book]));
+  const loggedTotal = new Map<string, number>();
+  const loggedInYear = new Map<string, number>();
+  for (const entry of activity) {
+    const book = booksById.get(entry.bookId);
+    if (!book) continue;
+    const pages = pagesReadOf(entry, book.pageCount);
+    if (!pages) continue;
+    loggedTotal.set(book.$id, (loggedTotal.get(book.$id) ?? 0) + pages);
+    if (entry.day.startsWith(prefix)) loggedInYear.set(book.$id, (loggedInYear.get(book.$id) ?? 0) + pages);
+  }
+  let total = 0;
+  for (const book of books) {
+    total += loggedInYear.get(book.$id) ?? 0;
+    if (book.status === "read" && book.finishedYear === year && book.pageCount && book.pageCount > 0) {
+      total += Math.max(0, book.pageCount - (loggedTotal.get(book.$id) ?? 0));
+    }
+  }
+  return total;
+}
+
 export function groupByDay(entries: ReadingLogEntry[]): Map<string, ReadingLogEntry[]> {
   const map = new Map<string, ReadingLogEntry[]>();
   for (const entry of entries) {

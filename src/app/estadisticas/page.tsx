@@ -15,6 +15,7 @@ import { useAnime } from "@/components/anime-provider";
 import { useLibrary } from "@/components/library-provider";
 import { animeEpisodesWatched } from "@/lib/anime-utils";
 import { parseAnimeBackup } from "@/lib/anime-validation";
+import { pagesReadInYear } from "@/lib/reading-activity";
 import { buildLibraryBackup, downloadJson } from "@/lib/backup";
 import { MAX_RATING, RATING_VALUES_DESC } from "@/lib/rating";
 import { MONTH_NAMES, MONTH_SHORT, countByMonth, groupByYear, plural } from "@/lib/recap";
@@ -108,7 +109,8 @@ function Statistics() {
   const currentYear = new Date().getFullYear();
   const completed = books.filter((book) => book.status === "read");
   const completedThisYear = completed.filter((book) => book.finishedYear === currentYear);
-  const pages = completedThisYear.reduce((sum, book) => sum + (book.pageCount ?? 0), 0);
+  // Páginas del año: lo registrado día a día + el resto de los libros terminados este año.
+  const pages = pagesReadInYear(books, activity, currentYear);
   const rated = completedThisYear.filter((book) => book.rating !== null);
   const average = rated.length ? rated.reduce((sum, book) => sum + (book.rating ?? 0), 0) / rated.length : 0;
   const authorCounts = completedThisYear.flatMap((book) => book.authors).reduce<Record<string, number>>((counts, author) => {

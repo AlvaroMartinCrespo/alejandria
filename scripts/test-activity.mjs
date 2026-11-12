@@ -5,7 +5,7 @@ import { register } from "node:module";
 
 register("./alias-loader.mjs", import.meta.url);
 const {
-  addDays, applyIncoming, compareRecentlyRead, lastFinishedDays, describeChange, groupByDay, mergeEntry, pagesReadOf, progressDelta, streaks, todayInZone,
+  addDays, applyIncoming, compareRecentlyRead, lastFinishedDays, describeChange, groupByDay, mergeEntry, pagesReadInYear, pagesReadOf, progressDelta, streaks, todayInZone,
 } = await import("../src/lib/reading-activity.ts");
 const { parseActivityBackup, parseMarksBackup } = await import("../src/lib/activity-validation.ts");
 
@@ -47,6 +47,27 @@ test("páginas del día: sin páginas, sin progreso o a la baja dan 0", () => {
   assert.equal(pagesReadOf({ progressFrom: 20, progressTo: 33 }, 0), 0);
   assert.equal(pagesReadOf({ progressFrom: null, progressTo: 33 }, 300), 0);
   assert.equal(pagesReadOf({ progressFrom: 50, progressTo: 40 }, 300), 0);
+});
+
+test("páginas del año: suman día a día sin esperar a terminar el libro", () => {
+  const entry = (bookId, day, from, to) => ({ $id: `${bookId}-${day}`, bookId, day, events: ["progress"], progressFrom: from, progressTo: to });
+  const reading = { $id: "r", status: "reading", pageCount: 200, finishedYear: null };
+  const activity = [entry("r", "2026-11-10", 0, 10), entry("r", "2026-11-11", 10, 25)]; // 20 + 30 págs
+  assert.equal(pagesReadInYear([reading], activity, 2026), 50);
+  assert.equal(pagesReadInYear([reading], activity, 2025), 0);
+});
+
+test("páginas del año: libro terminado no cuenta dos veces lo ya registrado", () => {
+  const entry = (bookId, day, from, to) => ({ $id: `${bookId}-${day}`, bookId, day, events: ["progress"], progressFrom: from, progressTo: to });
+  const done = { $id: "d", status: "read", pageCount: 200, finishedYear: 2026 };
+  // 50 págs registradas; el resto (150) se cuenta al estar terminado → 200 en total
+  assert.equal(pagesReadInYear([done], [entry("d", "2026-03-01", 0, 25)], 2026), 200);
+  // sin historial: se cuenta entero, como antes
+  assert.equal(pagesReadInYear([done], [], 2026), 200);
+  // empezado el año anterior: lo de 2025 no suma a 2026, pero el resto sí
+  assert.equal(pagesReadInYear([done], [entry("d", "2025-12-20", 0, 50), entry("d", "2026-01-05", 50, 60)], 2026), 100);
+  // terminado otro año: solo lo registrado en este
+  assert.equal(pagesReadInYear([{ ...done, finishedYear: 2025 }], [entry("d", "2026-01-05", 50, 60)], 2026), 20);
 });
 
 test("cambio a Leyendo registra started + status", () => {
