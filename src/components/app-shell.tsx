@@ -12,6 +12,7 @@ import { AnimeCover } from "@/components/anime-cover";
 import { AnimeProvider, useAnime } from "@/components/anime-provider";
 import { LibraryProvider, useLibrary } from "@/components/library-provider";
 import { ConnectionIndicator } from "@/components/save-status";
+import { HeaderMeteors } from "@/components/header-meteors";
 import { ANIME_STATUS_LABELS } from "@/lib/anime-utils";
 import { STATUS_LABELS } from "@/lib/book-utils";
 
@@ -115,7 +116,7 @@ function ShellContent({ children }: { children: ReactNode }) {
           </button>
         </div>
       </header>
-      <main className="page-shell">{children}</main>
+      <main className="page-shell"><HeaderMeteors />{children}</main>
       <nav className="mobile-nav" aria-label="Navegación móvil">
         {links.slice(0, 3).map(({ href, icon: Icon, label }) => (
           <Link key={href} href={href} className={isActive(href) ? "active" : ""}>

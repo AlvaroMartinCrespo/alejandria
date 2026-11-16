@@ -1,9 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Download, FileText, Upload } from "lucide-react";
+import { ChevronDown, Download, FileText, Upload } from "lucide-react";
 import { LibraryStatusChart, MonthlyReadingChart, RatingChart } from "@/components/library-charts";
 import { LibraryAuthors } from "@/components/library-authors";
 import { LibraryRecap } from "@/components/library-recap";
@@ -96,6 +96,32 @@ function Statistics() {
   const { anime, animeError, restoreAnime } = useAnime();
   const initialTab = useSearchParams().get("tab");
   const [tab, setTab] = useState<Tab>(TABS.some((item) => item.id === initialTab) ? (initialTab as Tab) : "resumen");
+  const exportMenuRef = useRef<HTMLDetailsElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function dismiss(event: PointerEvent | KeyboardEvent) {
+      const menu = exportMenuRef.current;
+      if (!menu?.open) return;
+      if (event instanceof KeyboardEvent) {
+        if (event.key !== "Escape") return;
+        menu.open = false;
+        menu.querySelector("summary")?.focus();
+      } else if (event.target instanceof Node && !menu.contains(event.target)) {
+        menu.open = false;
+      }
+    }
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", dismiss);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", dismiss);
+    };
+  }, []);
+
+  function closeExportMenu() {
+    if (exportMenuRef.current) exportMenuRef.current.open = false;
+  }
 
   // La pestaña activa se refleja en la URL (?tab=…) sin añadir entradas al historial:
   // así, al volver desde la ficha de un libro o de un autor, se recupera la misma pestaña.
@@ -191,11 +217,15 @@ function Statistics() {
     <>
       <section className="page-heading stats-heading">
         <div><p className="eyebrow">La biblioteca en números</p><h1>Estadísticas</h1></div>
-        <div className="export-actions">
-          <button className="button secondary" onClick={exportJson}><Download size={15} />JSON</button>
-          <label className="button secondary file-button" aria-disabled={!editing}><Upload size={15} />Restaurar<input disabled={!editing} type="file" accept="application/json,.json" onChange={(event) => void importJson(event.target.files?.[0])} /></label>
-          <Link className="button secondary" href="/exportar"><FileText size={15} />PDF</Link>
-        </div>
+        <details className="export-menu" ref={exportMenuRef}>
+          <summary className="button secondary"><Download size={15} aria-hidden="true" />Copias y exportación<ChevronDown size={15} aria-hidden="true" /></summary>
+          <div className="export-menu-options">
+            <button type="button" onClick={() => { closeExportMenu(); exportJson(); }}><Download size={15} aria-hidden="true" />JSON</button>
+            <button type="button" disabled={!editing} onClick={() => { closeExportMenu(); importInputRef.current?.click(); }}><Upload size={15} aria-hidden="true" />Restaurar</button>
+            <Link href="/exportar" onClick={closeExportMenu}><FileText size={15} aria-hidden="true" />PDF</Link>
+          </div>
+          <input ref={importInputRef} hidden disabled={!editing} type="file" accept="application/json,.json" onChange={(event) => { void importJson(event.target.files?.[0]); event.target.value = ""; }} />
+        </details>
       </section>
 
       <div className="stats-tabs" role="tablist" aria-label="Vistas de estadísticas">

@@ -234,12 +234,6 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
         <div><dt>Días leídos</dt><dd>{monthDays.length}</dd></div>
         <div><dt>Libros distintos</dt><dd>{monthBooks}</dd></div>
         <div>
-          <dt>Páginas leídas</dt>
-          <dd>{selectedDayPages.toLocaleString("es")}</dd>
-          <small className="calendar-summary-note">{selected === today ? "Hoy" : dayLabel(selected)}</small>
-          {selectedDayWithoutPages > 0 && <small className="calendar-summary-note">{plural(selectedDayWithoutPages, "libro sin páginas", "libros sin páginas")} no suma{selectedDayWithoutPages === 1 ? "" : "n"}</small>}
-        </div>
-        <div>
           <dt>Páginas del mes</dt>
           <dd>{monthPages.toLocaleString("es")}</dd>
           {monthWithoutPages > 0 && <small className="calendar-summary-note">{plural(monthWithoutPages, "libro sin páginas", "libros sin páginas")} no suma{monthWithoutPages === 1 ? "" : "n"}</small>}
@@ -250,6 +244,13 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
 
       <section className="calendar-detail" aria-live="polite" aria-labelledby="calendar-detail-title">
         <h3 id="calendar-detail-title">{selected === today ? "Hoy" : dayLabel(selected)}{selected === today && <span> · {dayLabel(selected)}</span>}</h3>
+        <dl className="calendar-day-summary">
+          <div>
+            <dt>Páginas leídas</dt>
+            <dd>{selectedDayPages.toLocaleString("es")}</dd>
+            {selectedDayWithoutPages > 0 && <small className="calendar-summary-note">{plural(selectedDayWithoutPages, "libro sin páginas", "libros sin páginas")} no suma{selectedDayWithoutPages === 1 ? "" : "n"}</small>}
+          </div>
+        </dl>
         {selectedEntries.length ? (
           <ul>
             {selectedEntries.map((entry) => {

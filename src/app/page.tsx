@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, ChevronDown, FolderPlus, MoreHorizontal, Undo2 } from "lucide-react";
+import { CalendarDays, Check, ChevronDown, FolderPlus, MoreHorizontal, Undo2 } from "lucide-react";
 import { DndContext, DragEndEvent, DragOverlay, PointerSensor, TouchSensor, closestCorners, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useEffect, useState } from "react";
@@ -84,9 +84,13 @@ export default function Home() {
         </blockquote>
       </section>
 
+      <div className="home-reading-header">
+        <div className="section-label"><span>Leyendo ahora</span><i /></div>
+        <Link href="/estadisticas?tab=calendario" className="calendar-shortcut"><CalendarDays size={16} aria-hidden="true" />Calendario</Link>
+      </div>
+
       {readingList.length > 0 ? (
         <section className="now-reading">
-          <div className="section-label"><span>Leyendo ahora</span><i /></div>
           <div className="now-reading-list">
             {readingList.map((reading) => <ReadingEntry key={reading.$id} reading={reading} />)}
           </div>
@@ -157,7 +161,7 @@ export default function Home() {
         <details className="library-section">
           <summary>
             <span><strong>Últimos libros añadidos</strong><small>{recentlyAdded.length} más recientes</small></span>
-            <i aria-hidden="true">⌄</i>
+            <i aria-hidden="true"><ChevronDown size={16} /></i>
           </summary>
           <div className="section-body">
             {recentlyAdded.length

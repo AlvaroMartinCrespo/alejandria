@@ -323,6 +323,8 @@ summary:focus-visible {
 }
 
 .page-heading {
+  position: relative;
+  isolation: isolate;
   min-height: 156px;
   display: flex;
   align-items: flex-end;
@@ -330,6 +332,46 @@ summary:focus-visible {
   gap: 48px;
   margin-bottom: 48px;
   animation: reveal .5s ease-out both;
+}
+
+.page-heading::before {
+  content: "";
+  position: absolute;
+  inset: -24px 0 -12px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 8% 24%, rgba(242,240,233,.35) 0 .7px, transparent 1.5px),
+    radial-gradient(circle at 17% 68%, rgba(242,240,233,.2) 0 .6px, transparent 1.3px),
+    radial-gradient(circle at 26% 12%, rgba(242,240,233,.3) 0 .8px, transparent 1.6px),
+    radial-gradient(circle at 34% 45%, rgba(242,240,233,.16) 0 .6px, transparent 1.3px),
+    radial-gradient(circle at 42% 80%, rgba(242,240,233,.28) 0 .7px, transparent 1.5px),
+    radial-gradient(circle at 49% 20%, rgba(242,240,233,.24) 0 .6px, transparent 1.4px),
+    radial-gradient(circle at 56% 57%, rgba(242,240,233,.38) 0 .8px, transparent 1.6px),
+    radial-gradient(circle at 63% 8%, rgba(242,240,233,.22) 0 .6px, transparent 1.3px),
+    radial-gradient(circle at 69% 35%, rgba(242,240,233,.32) 0 .7px, transparent 1.5px),
+    radial-gradient(circle at 76% 76%, rgba(242,240,233,.2) 0 .6px, transparent 1.3px),
+    radial-gradient(circle at 83% 18%, rgba(242,240,233,.4) 0 .8px, transparent 1.7px),
+    radial-gradient(circle at 89% 52%, rgba(242,240,233,.25) 0 .7px, transparent 1.4px),
+    radial-gradient(circle at 95% 87%, rgba(242,240,233,.3) 0 .7px, transparent 1.5px),
+    linear-gradient(125deg, transparent 48%, rgba(242,240,233,.09) 48%, rgba(242,240,233,.026) 72%, transparent 72%),
+    linear-gradient(125deg, transparent calc(48% - 1px), rgba(242,240,233,.18) 48%, transparent calc(48% + 1px)),
+    repeating-linear-gradient(0deg, transparent 0 31px, rgba(242,240,233,.055) 31px 32px);
+  mask-image: linear-gradient(90deg, rgba(0,0,0,.3), #000 80%);
+}
+
+.page-heading::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: var(--meteor-width, 60px);
+  height: 2px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, rgba(242,240,233,.65), rgba(242,240,233,.16) 35%, transparent);
+  transform-origin: left center;
 }
 
 .page-heading h1,
@@ -801,6 +843,7 @@ summary:focus-visible {
 .library-section > summary > i {
   width: 32px;
   height: 32px;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
   color: var(--muted);
@@ -2176,6 +2219,86 @@ textarea::placeholder {
   align-items: flex-end;
 }
 
+.home-reading-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-bottom: 24px;
+}
+
+.home-reading-header .section-label {
+  flex: 1;
+  margin: 0;
+}
+
+.calendar-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.calendar-shortcut:hover {
+  color: var(--acid);
+}
+
+.export-menu {
+  position: relative;
+  max-width: 100%;
+}
+
+.export-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.export-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.export-menu-options {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 25;
+  width: 220px;
+  max-width: calc(100vw - 32px);
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--raised);
+  box-shadow: 0 14px 35px rgba(0,0,0,.5);
+}
+
+.export-menu-options > button,
+.export-menu-options > a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.export-menu-options > :hover:not(:disabled) {
+  background: var(--panel);
+}
+
+.export-menu-options > button:disabled {
+  color: var(--subtle);
+  cursor: not-allowed;
+}
+
 .export-actions {
   display: flex;
   flex-wrap: wrap;
@@ -3457,8 +3580,9 @@ textarea::placeholder {
     grid-column: 1 / -1;
   }
 
-  .stats-heading .export-actions {
-    margin-top: 22px;
+  .stats-heading .export-menu {
+    width: fit-content;
+    margin-top: 24px;
   }
 
   .stat-grid {
@@ -5259,7 +5383,8 @@ svg.lucide:not([stroke-width="3"]) {
   background: var(--panel);
 }
 
-.calendar-summary dt {
+.calendar-summary dt,
+.calendar-day-summary dt {
   color: var(--subtle);
   font-size: 11px;
   font-weight: 700;
@@ -5267,7 +5392,8 @@ svg.lucide:not([stroke-width="3"]) {
   text-transform: uppercase;
 }
 
-.calendar-summary dd {
+.calendar-summary dd,
+.calendar-day-summary dd {
   margin: 6px 0 0;
   font-family: var(--serif);
   font-size: 22px;
@@ -5278,6 +5404,12 @@ svg.lucide:not([stroke-width="3"]) {
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--panel);
+}
+
+.calendar-day-summary {
+  margin: 0 0 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
 }
 
 .calendar-detail h3 {
