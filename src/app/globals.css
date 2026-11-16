@@ -2217,6 +2217,7 @@ textarea::placeholder {
 
 .stats-heading {
   align-items: flex-end;
+  z-index: 30;
 }
 
 .home-reading-header {
@@ -3583,6 +3584,11 @@ textarea::placeholder {
   .stats-heading .export-menu {
     width: fit-content;
     margin-top: 24px;
+  }
+
+  .stats-heading .export-menu-options {
+    left: 0;
+    right: auto;
   }
 
   .stat-grid {
