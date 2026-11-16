@@ -10,7 +10,7 @@ import type { ReadingLogEntry } from "@/types/activity";
 import type { Anime } from "@/types/anime";
 import type { Book, Collection } from "@/types/book";
 
-export const DEFAULT_EVERY_DAYS = 14;
+export const DEFAULT_EVERY_DAYS = 7;
 export const DEFAULT_TIMEZONE = "Europe/Madrid";
 
 export type BackupTrigger = "cron" | "manual";
@@ -67,7 +67,7 @@ export function addDaysToDate(isoDay: string, days: number): string {
 
 /**
  * ¿Toca enviar? Compara *días naturales* en la zona configurada, no horas transcurridas: si el último envío
- * fue a las 07:00:05 y el cron de hoy corre a las 07:00:02, siguen contando 14 días y no se retrasa un día más.
+ * fue a las 07:00:05 y el cron de hoy corre a las 07:00:02, siguen contando los días naturales y no se retrasa un día más.
  */
 export function isBackupDue(lastSentAt: string | null, now: Date, everyDays: number, timeZone: string): boolean {
   if (!lastSentAt) return true;

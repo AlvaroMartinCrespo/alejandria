@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { register } from "node:module";
 
 register("./alias-loader.mjs", import.meta.url);
-const { runBackup, isBackupDue, localDate, addDaysToDate, buildEmailText, buildBackupStatus } = await import("../src/lib/backup-run.ts");
+const { DEFAULT_EVERY_DAYS, runBackup, isBackupDue, localDate, addDaysToDate, buildEmailText, buildBackupStatus } = await import("../src/lib/backup-run.ts");
 
 let n = 0;
 async function test(name, fn) { await fn(); n += 1; console.log(`ok  ${name}`); }
@@ -29,7 +29,7 @@ function makeDeps(over = {}) {
   const deps = {
     now: () => new Date("2026-11-11T07:00:02Z"),
     missingConfig: [],
-    config: { to: "yo@example.com", from: "Alejandría <b@example.com>", apiKey: "re_x", everyDays: 14, timeZone: "Europe/Madrid" },
+    config: { to: "yo@example.com", from: "Alejandría <b@example.com>", apiKey: "re_x", everyDays: DEFAULT_EVERY_DAYS, timeZone: "Europe/Madrid" },
     getLastSuccess: async () => { state.lastCalls += 1; return null; },
     loadSource: async () => source(),
     sendEmail: async (input) => { state.sent.push(input); return { id: "msg_1" }; },
@@ -53,6 +53,13 @@ await test("isBackupDue: 14 días naturales aunque pasen 13 d 23 h 59 min (sin d
   assert.equal(isBackupDue("2026-10-28T07:00:05Z", now, 14, "Europe/Madrid"), true);
   assert.equal(isBackupDue("2026-10-29T07:00:05Z", now, 14, "Europe/Madrid"), false);
   assert.equal(isBackupDue("2026-11-11T05:00:00Z", now, 14, "Europe/Madrid"), false);
+});
+
+await test("intervalo semanal por defecto: no envía a los 6 días y sí a los 7 días naturales", () => {
+  assert.equal(DEFAULT_EVERY_DAYS, 7);
+  const now = new Date("2026-11-11T07:00:02Z");
+  assert.equal(isBackupDue("2026-11-05T07:00:05Z", now, DEFAULT_EVERY_DAYS, "Europe/Madrid"), false);
+  assert.equal(isBackupDue("2026-11-04T07:00:05Z", now, DEFAULT_EVERY_DAYS, "Europe/Madrid"), true);
 });
 
 await test("sin envíos previos: envía un único JSON con el resumen y lo registra", async () => {
@@ -79,17 +86,17 @@ await test("sin envíos previos: envía un único JSON con el resumen y lo regis
   assert.deepEqual(state.logs, [{ status: "success", trigger: "cron", bookCount: 2, animeCount: 1, jsonBytes: mail.attachments[0].content.length, errorMessage: null }]);
 });
 
-await test("antes de 14 días no hace nada: ni carga datos, ni envía, ni registra", async () => {
+await test("antes de 7 días no hace nada: ni carga datos, ni envía, ni registra", async () => {
   let loaded = false;
-  const { deps, state } = makeDeps({ getLastSuccess: last("2026-11-04T07:00:00Z"), loadSource: async () => { loaded = true; return source(); } });
+  const { deps, state } = makeDeps({ getLastSuccess: last("2026-11-05T07:00:00Z"), loadSource: async () => { loaded = true; return source(); } });
   const outcome = await runBackup(deps, { trigger: "cron" });
-  assert.deepEqual(outcome, { status: "skipped", lastBackupAt: "2026-11-04T07:00:00Z", nextDueDate: "2026-11-18" });
+  assert.deepEqual(outcome, { status: "skipped", lastBackupAt: "2026-11-05T07:00:00Z", nextDueDate: "2026-11-12" });
   assert.equal(loaded, false);
   assert.equal(state.sent.length + state.logs.length, 0);
 });
 
-await test("a los 14 días naturales vuelve a enviar", async () => {
-  const { deps, state } = makeDeps({ getLastSuccess: last("2026-10-28T07:00:05Z") });
+await test("a los 7 días naturales vuelve a enviar", async () => {
+  const { deps, state } = makeDeps({ getLastSuccess: last("2026-11-04T07:00:05Z") });
   assert.equal((await runBackup(deps, { trigger: "cron" })).status, "sent");
   assert.equal(state.sent.length, 1);
 });

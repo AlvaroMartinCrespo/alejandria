@@ -22,7 +22,7 @@ Ideal para quien busca una alternativa **self-hosted** y minimalista a apps como
 - 📊 **Estadísticas de lectura**: totales, páginas leídas, autor más leído, media de valoraciones y gráfico anual.
 - 📺 **Sección de Anime** (`/anime`, `/anime/[id]`, `/anime/estadisticas`): búsqueda con Jikan (respaldo AniList), temporada y capítulo escritos a mano, estados (Viendo, Pendiente, En pausa, Visto, Abandonado), orden manual, estadísticas y frase japonesa del día.
 - 💾 **Exportación e importación**: backup completo en JSON (v5: libros, carpetas, anime, historial y días marcados; acepta v1-v4) y vista imprimible en PDF con libros y anime.
-- ✉️ **Copia de seguridad por correo**: cada 14 días (cron de Vercel + Resend) se envía el JSON completo; también se puede enviar al momento desde Estadísticas con «Enviar copia ahora». Cada intento queda en `backup_log`. Ver `DEPLOYMENT.md`.
+- ✉️ **Copia de seguridad por correo**: cada 7 días (cron de Vercel + Resend) se envía el JSON completo; también se puede enviar al momento desde Estadísticas con «Enviar copia ahora». Cada intento queda en `backup_log`. Ver `DEPLOYMENT.md`.
 - 🎲 **Modo "Sorpréndeme"** para elegir tu próxima lectura al azar.
 - 📱 **PWA instalable**, con funcionamiento offline gracias a un modo local automático cuando Supabase no está configurado.
 - 🔒 **Edición protegida opcionalmente**: candado con contraseña compartida y sesión persistente en cookie `HttpOnly`.

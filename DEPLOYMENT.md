@@ -100,7 +100,7 @@ Si la base de datos viene de la versión con puntuación sobre 5, pega `supabase
 
 ## Copias de seguridad por correo
 
-Cada **14 días** se envía por correo (Resend) la copia **JSON** completa de la biblioteca (formato v5: libros, carpetas, anime, historial y días marcados). No se envía PDF. El archivo se llama `alejandria-backup-YYYY-MM-DD.json` y el correo trae un resumen con el número de libros y anime.
+Cada **7 días** se envía por correo (Resend) la copia **JSON** completa de la biblioteca (formato v5: libros, carpetas, anime, historial y días marcados). No se envía PDF. El archivo se llama `alejandria-backup-YYYY-MM-DD.json` y el correo trae un resumen con el número de libros y anime.
 
 ### Puesta en marcha
 
@@ -114,7 +114,7 @@ Cada **14 días** se envía por correo (Resend) la copia **JSON** completa de la
 | `RESEND_API_KEY` | Clave de Resend. |
 | `BACKUP_EMAIL_TO` | Destino (varias direcciones separadas por comas). Usa un buzón privado: el JSON lleva tus notas y el correo no va cifrado. |
 | `BACKUP_EMAIL_FROM` | Remitente verificado en Resend, p. ej. `Alejandría <backup@tu-dominio.com>`. |
-| `BACKUP_EVERY_DAYS` | Opcional, por defecto 14 (1-365). |
+| `BACKUP_EVERY_DAYS` | Opcional, por defecto 7 (1-365). Si estaba configurada como 14, cambiarla a 7 para activar la frecuencia semanal. |
 | `ALEJANDRIA_TIMEZONE` | Opcional, por defecto `Europe/Madrid`. Decide la fecha del archivo y el cómputo de días. |
 
 4. Redespliega. `vercel.json` ya incluye el cron.
@@ -138,15 +138,15 @@ Respuestas: `{"status":"sent",…}` (envió), `{"status":"skipped","nextDueDate"
 
 ### Envío manual desde Estadísticas
 
-Al final de **Estadísticas** hay un bloque «Copia por correo» con la fecha de la última copia enviada correctamente y cuándo toca la siguiente automática. Con la sesión de edición desbloqueada aparece el botón **«Enviar copia ahora»**, que llama a `POST /api/backup/send` (protegido con `hasEditorSession()`; 401 sin sesión) y fuerza el envío sin esperar los 14 días.
+Al final de **Estadísticas** hay un bloque «Copia por correo» con la fecha de la última copia enviada correctamente y cuándo toca la siguiente automática. Con la sesión de edición desbloqueada aparece el botón **«Enviar copia ahora»**, que llama a `POST /api/backup/send` (protegido con `hasEditorSession()`; 401 sin sesión) y fuerza el envío sin esperar los 7 días.
 
-- El envío manual se registra en `backup_log` con `trigger = manual`. Cuenta como último envío correcto, así que **el plazo de 14 días del cron se reinicia desde esa copia**.
+- El envío manual se registra en `backup_log` con `trigger = manual`. Cuenta como último envío correcto, así que **el plazo de 7 días del cron se reinicia desde esa copia**.
 - Si falla, el botón muestra el error y no se registra ningún éxito (el cron sigue reintentando a diario).
 - `GET /api/backup/status` devuelve solo fechas, recuentos y si la configuración está completa (nunca claves ni direcciones). Responde 503 si falta `backup_log`.
 
 ### Pruebas
 
-`npm test` incluye `scripts/test-email.mjs` (Resend con `fetch` simulado) y `scripts/test-backup-run.mjs` (plazo de 14 días, zona horaria, errores, reintento, límite de tamaño).
+`npm test` incluye `scripts/test-email.mjs` (Resend con `fetch` simulado) y `scripts/test-backup-run.mjs` (plazo de 7 días, intervalos personalizados, zona horaria, errores, reintento, límite de tamaño).
 
 ## 4 quater. Sincronización entre dispositivos (instalaciones existentes)
 
