@@ -100,6 +100,9 @@ summary:focus-visible {
 }
 
 .app-frame {
+  /* Capa del navbar: por encima de todo el contenido de página (menús, barras flotantes...).
+     Solo los modales/búsqueda (80) y el toast (100) quedan por encima, con su fondo oscurecido. */
+  --z-navbar: 60;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -110,7 +113,7 @@ summary:focus-visible {
 .topbar {
   position: sticky;
   top: 0;
-  z-index: 30;
+  z-index: var(--z-navbar);
   min-height: 72px;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -2217,7 +2220,8 @@ textarea::placeholder {
 
 .stats-heading {
   align-items: flex-end;
-  z-index: 30;
+  /* Debe quedar siempre por debajo del navbar (--z-navbar); solo necesita elevarse sobre el contenido siguiente para su menú desplegable */
+  z-index: 10;
 }
 
 .home-reading-header {
@@ -3169,7 +3173,7 @@ textarea::placeholder {
     right: 0;
     bottom: 0;
     left: 0;
-    z-index: 35;
+    z-index: calc(var(--z-navbar) - 15);
     min-height: var(--nav-mobile-h);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
