@@ -5505,6 +5505,24 @@ svg.lucide:not([stroke-width="3"]) {
   color: var(--muted);
 }
 
+/* Desplegable «Libros del mes»: reutiliza el estilo de «Últimos libros añadidos» */
+.month-books {
+  animation: none;
+}
+
+.month-book-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.month-book-badges em {
+  margin: 0;
+  font-style: normal;
+}
+
 @media (max-width: 480px) {
   .calendar-row,
   .calendar-grid {

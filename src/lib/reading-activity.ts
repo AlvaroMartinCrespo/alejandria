@@ -214,3 +214,94 @@ export function streaks(days: string[], today: string): { current: number; longe
   if (previous && (previous === today || previous === addDays(today, -1))) current = run;
   return { current, longest };
 }
+
+/* ---------- Libros de un mes ---------- */
+
+export type MonthBookState = "started" | "finished" | "continued";
+
+export interface MonthBook {
+  book: Book;
+  /** Qué pasó con el libro este mes: lo empezó, lo terminó o simplemente seguía en marcha. */
+  states: MonthBookState[];
+  /** Páginas leídas este mes según el registro diario (0 si no hay datos o el libro no tiene páginas). */
+  pages: number;
+}
+
+const monthIndex = (year: number, month: number) => year * 12 + (month - 1);
+
+/**
+ * Libros que se han leído o se estaban leyendo en un mes.
+ * Un libro cuenta en todos los meses desde que se empezó (primera actividad registrada) hasta que
+ * se terminó; si sigue «Leyendo», hasta el mes actual. Así, un libro empezado en octubre y
+ * continuado en noviembre aparece en los dos. Los libros terminados sin registro diario
+ * aparecen solo en su mes de finalización.
+ */
+export function booksOfMonth(
+  books: Book[],
+  activity: ReadingLogEntry[],
+  year: number,
+  month: number,
+  today: string,
+): MonthBook[] {
+  const target = monthIndex(year, month);
+  const now = parseDay(today);
+  const nowIndex = monthIndex(now.year, now.month);
+
+  const entriesByBook = new Map<string, ReadingLogEntry[]>();
+  for (const entry of activity) {
+    const list = entriesByBook.get(entry.bookId);
+    if (list) list.push(entry);
+    else entriesByBook.set(entry.bookId, [entry]);
+  }
+
+  const result: MonthBook[] = [];
+  for (const book of books) {
+    const entries = entriesByBook.get(book.$id) ?? [];
+    const activeMonths = entries.map((entry) => {
+      const { year: y, month: m } = parseDay(entry.day);
+      return monthIndex(y, m);
+    });
+    const startedMonths = entries
+      .filter((entry) => entry.events.includes("started"))
+      .map((entry) => {
+        const { year: y, month: m } = parseDay(entry.day);
+        return monthIndex(y, m);
+      });
+    const finishedLogged = entries
+      .filter((entry) => entry.events.includes("finished"))
+      .map((entry) => {
+        const { year: y, month: m } = parseDay(entry.day);
+        return monthIndex(y, m);
+      });
+
+    // Mes de finalización: el que el libro tiene guardado o, si no, el del último registro «terminado».
+    let finishedIndex: number | null = null;
+    if (book.status === "read") {
+      if (book.finishedYear && book.finishedMonth) finishedIndex = monthIndex(book.finishedYear, book.finishedMonth);
+      else if (finishedLogged.length) finishedIndex = Math.max(...finishedLogged);
+    }
+
+    const known = [...activeMonths, ...(finishedIndex !== null ? [finishedIndex] : [])];
+    if (book.status === "reading") known.push(nowIndex);
+    if (!known.length) continue;
+
+    const start = Math.min(...known);
+    let end = Math.max(...known);
+    if (book.status === "reading") end = Math.max(end, nowIndex);
+    if (target < start || target > end) continue;
+
+    const states: MonthBookState[] = [];
+    if (startedMonths.includes(target)) states.push("started");
+    if (finishedIndex === target || (finishedIndex === null && finishedLogged.includes(target))) states.push("finished");
+    if (!states.length) states.push("continued");
+
+    const prefix = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-`;
+    const pages = entries
+      .filter((entry) => entry.day.startsWith(prefix))
+      .reduce((sum, entry) => sum + pagesReadOf(entry, book.pageCount), 0);
+
+    result.push({ book, states, pages });
+  }
+
+  return result.sort((a, b) => a.book.title.localeCompare(b.book.title, "es"));
+}

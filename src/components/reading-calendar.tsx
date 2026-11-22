@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { BookCover } from "@/components/book-cover";
 import { Hanko } from "@/components/hanko";
 import { useLibrary } from "@/components/library-provider";
 import {
   addDays,
+  booksOfMonth,
   daysInMonth,
   formatDay,
   groupByDay,
@@ -110,6 +111,11 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
       .filter((entry) => progressDelta(entry) > 0 && !booksById.get(entry.bookId)?.pageCount)
       .map((entry) => entry.bookId),
   ).size;
+  // Libros leídos o en curso durante el mes visible (un libro de varios meses sale en todos).
+  const monthBookList = useMemo(
+    () => booksOfMonth(books, visible, cursor.year, cursor.month, today),
+    [books, visible, cursor.year, cursor.month, today],
+  );
   const { current, longest } = useMemo(() => streaks(Array.from(readDays), today), [readDays, today]);
 
   function goToMonth(delta: number) {
@@ -241,6 +247,38 @@ export function ReadingCalendar({ books, activity }: { books: Book[]; activity: 
         <div><dt>Racha actual</dt><dd>{plural(current, "día", "días")}</dd></div>
         <div><dt>Racha máxima</dt><dd>{plural(longest, "día", "días")}</dd></div>
       </dl>
+
+      <details className="library-section month-books">
+        <summary>
+          <span><strong>Libros de {MONTH_NAMES[cursor.month - 1].toLowerCase()}</strong><small>{plural(monthBookList.length, "libro", "libros")}</small></span>
+          <i aria-hidden="true"><ChevronDown size={16} /></i>
+        </summary>
+        <div className="section-body">
+          {monthBookList.length ? (
+            <ol className="recent-list">
+              {monthBookList.map(({ book, states, pages }) => (
+                <li key={book.$id}>
+                  <Link href={`/libro/${book.$id}`} className="recent-link" aria-label={`Abrir ${book.title}`}>
+                    <BookCover title={book.title} url={book.coverUrl} />
+                    <div className="recent-copy">
+                      <strong>{book.title}</strong>
+                      <span>{book.authors.join(", ") || "Autor desconocido"}</span>
+                      <div className="month-book-badges">
+                        {states.includes("started") && <em className="calendar-badge">Empezado</em>}
+                        {states.includes("continued") && <em className="calendar-badge">Leyendo</em>}
+                        {states.includes("finished") && <em className="calendar-badge finished">Terminado</em>}
+                        {pages > 0 && <em className="calendar-pages">{plural(pages, "página", "páginas")}</em>}
+                      </div>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <div className="list-empty"><span>＋</span><p>No hay libros leídos ni en curso este mes.</p></div>
+          )}
+        </div>
+      </details>
 
       <section className="calendar-detail" aria-live="polite" aria-labelledby="calendar-detail-title">
         <h3 id="calendar-detail-title">{selected === today ? "Hoy" : dayLabel(selected)}{selected === today && <span> · {dayLabel(selected)}</span>}</h3>
