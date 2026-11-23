@@ -46,6 +46,8 @@ html {
 }
 
 body {
+  /* contexto de apilado propio: deja las estrellas fugaces (z-index -1) sobre el fondo y bajo el contenido */
+  isolation: isolate;
   min-height: 100vh;
   margin: 0;
   color: var(--ink);
@@ -375,6 +377,32 @@ summary:focus-visible {
   opacity: 0;
   background: linear-gradient(90deg, rgba(242,240,233,.65), rgba(242,240,233,.16) 35%, transparent);
   transform-origin: left center;
+}
+
+/* Estrellas fugaces de todo el body: capa fija detrás del contenido, sin interacción */
+.body-meteors {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.body-meteor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 2px;
+  opacity: 0;
+  background: linear-gradient(90deg, rgba(242,240,233,.65), rgba(242,240,233,.16) 35%, transparent);
+  transform-origin: left center;
+  will-change: transform, opacity;
+}
+
+@media print {
+  .body-meteors {
+    display: none;
+  }
 }
 
 .page-heading h1,

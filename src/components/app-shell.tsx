@@ -13,6 +13,7 @@ import { AnimeProvider, useAnime } from "@/components/anime-provider";
 import { LibraryProvider, useLibrary } from "@/components/library-provider";
 import { ConnectionIndicator } from "@/components/save-status";
 import { HeaderMeteors } from "@/components/header-meteors";
+import { BodyMeteors } from "@/components/body-meteors";
 import { ANIME_STATUS_LABELS } from "@/lib/anime-utils";
 import { STATUS_LABELS } from "@/lib/book-utils";
 
@@ -85,6 +86,7 @@ function ShellContent({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-frame" data-locked={editorChecked && !editing ? "true" : undefined}>
+      <BodyMeteors />
       <header className="topbar">
         <Link href="/" className="brand" aria-label="Alejandría, inicio">
           <span className="brand-mark">A</span>
