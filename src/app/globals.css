@@ -5845,3 +5845,91 @@ svg.lucide:not([stroke-width="3"]) {
     border-bottom-color: #111;
   }
 }
+
+/* Atmósfera espacial: gradientes CSS estáticos y una constelación SVG ocasional. */
+.cosmic-atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+.cosmic-nebula {
+  position: absolute;
+  display: block;
+  width: clamp(260px, 38vw, 560px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  opacity: .075;
+  background: radial-gradient(ellipse at center,
+    rgba(91, 111, 151, .34) 0%,
+    rgba(79, 91, 130, .17) 28%,
+    rgba(74, 83, 112, .055) 48%,
+    transparent 70%);
+  animation: nebula-drift 54s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.cosmic-nebula-one { top: -20%; left: -18%; }
+
+.cosmic-nebula-two {
+  right: -20%;
+  bottom: -32%;
+  width: clamp(300px, 44vw, 640px);
+  opacity: .055;
+  background: radial-gradient(ellipse at center,
+    rgba(119, 91, 139, .3) 0%,
+    rgba(94, 78, 121, .14) 32%,
+    rgba(74, 83, 112, .045) 52%,
+    transparent 72%);
+  animation-delay: -27s;
+  animation-duration: 68s;
+}
+
+.cosmic-constellation {
+  position: absolute;
+  width: clamp(170px, 24vw, 280px);
+  height: auto;
+  overflow: visible;
+  opacity: 0;
+  animation: constellation-appear 17s ease-in-out both;
+}
+
+.cosmic-constellation line {
+  stroke: rgba(190, 202, 222, .32);
+  stroke-width: .65;
+  vector-effect: non-scaling-stroke;
+}
+
+.cosmic-constellation circle {
+  fill: rgba(224, 231, 242, .76);
+  filter: drop-shadow(0 0 2px rgba(190, 210, 240, .5));
+}
+
+@keyframes constellation-appear {
+  0%, 100% { opacity: 0; }
+  14%, 78% { opacity: .42; }
+}
+
+@keyframes nebula-drift {
+  from { transform: translate3d(-1.5%, -1%, 0) scale(.96); }
+  to { transform: translate3d(2%, 2.5%, 0) scale(1.04); }
+}
+
+@media (max-width: 640px) {
+  .cosmic-nebula { width: 78vw; opacity: .055; }
+  .cosmic-nebula-one { top: -12%; left: -34%; }
+  .cosmic-nebula-two { right: -38%; bottom: -18%; opacity: .04; }
+  .cosmic-constellation { width: clamp(150px, 48vw, 210px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cosmic-nebula { animation: none; }
+  .cosmic-constellation { display: none; }
+}
+
+@media print {
+  .cosmic-atmosphere { display: none; }
+}
