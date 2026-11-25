@@ -78,9 +78,10 @@ export function LibraryStatusChart({ data }: { data: StatusDatum[] }) {
   );
 }
 
-export function RatingChart({ data }: { data: Array<{ rating: number; count: number }> }) {
+export function RatingChart({ data, onSelectRating }: { data: Array<{ rating: number; count: number }>; onSelectRating?: (rating: number) => void }) {
   return (
-    <div className="mono-bar-chart" role="img" aria-label={data.map((item) => `${item.rating} estrellas: ${item.count}`).join(", ")}>
+    <div className="mono-bar-chart rating-chart-interactive">
+      <div className="rating-chart-graphic" role="img" aria-label={data.map((item) => `${item.rating} estrellas: ${item.count}`).join(", ")}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="vertical" margin={{ top: 2, right: 12, left: -14, bottom: 2 }}>
           <CartesianGrid horizontal={false} stroke="rgba(255, 255, 255, .055)" strokeDasharray="2 3" />
@@ -104,6 +105,16 @@ export function RatingChart({ data }: { data: Array<{ rating: number; count: num
           <Bar dataKey="count" fill="#e9bb58" radius={[0, 8, 8, 0]} barSize={12} animationDuration={900} />
         </BarChart>
       </ResponsiveContainer>
+      </div>
+      {onSelectRating && (
+        <div className="rating-chart-targets">
+          {data.map(({ rating, count }) => (
+            count > 0
+              ? <button key={rating} type="button" onClick={() => onSelectRating(rating)} aria-label={`Ver ${count} ${count === 1 ? "libro" : "libros"} con ${rating} de 10 estrellas`} title={`${rating}/10 · ${count} ${count === 1 ? "libro" : "libros"}`} />
+              : <span key={rating} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

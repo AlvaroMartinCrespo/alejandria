@@ -105,6 +105,7 @@ summary:focus-visible {
 }
 
 .app-frame {
+  position: relative;
   /* Capa del navbar: por encima de todo el contenido de página (menús, barras flotantes...).
      Solo los modales/búsqueda (80) y el toast (100) quedan por encima, con su fondo oscurecido. */
   --z-navbar: 60;
@@ -1850,7 +1851,7 @@ textarea::placeholder {
 
 .search-overlay {
   place-items: start center;
-  padding-top: max(90px, 12vh);
+  padding: max(90px, 12vh, calc(env(safe-area-inset-top, 0px) + 24px)) max(20px, calc(env(safe-area-inset-right, 0px) + 16px)) max(20px, calc(env(safe-area-inset-bottom, 0px) + 16px)) max(20px, calc(env(safe-area-inset-left, 0px) + 16px));
 }
 
 .global-search-panel {
@@ -1863,7 +1864,7 @@ textarea::placeholder {
   box-shadow: 0 30px 90px rgba(0,0,0,.65);
 }
 
-.global-search-panel .search-field {
+.global-search-panel .search-field.large {
   margin: 14px;
 }
 
@@ -3144,6 +3145,8 @@ textarea::placeholder {
 @media (max-width: 900px) {
   .topbar {
     grid-template-columns: 1fr auto;
+    padding-right: max(20px, calc(env(safe-area-inset-right, 0px) + 16px));
+    padding-left: max(20px, calc(env(safe-area-inset-left, 0px) + 16px));
   }
 
   .main-nav {
@@ -3195,13 +3198,20 @@ textarea::placeholder {
 
 @media (max-width: 680px) {
   .topbar {
-    top: calc(8px + env(safe-area-inset-top, 0px));
-    width: calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)));
-    min-height: 60px;
-    margin-top: calc(8px + env(safe-area-inset-top, 0px));
-    padding: 8px 12px;
+    position: relative;
+    top: auto;
+    width: 100%;
+    min-height: calc(56px + env(safe-area-inset-top, 0px));
+    margin-top: 0;
+    padding: calc(6px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px)) 6px calc(16px + env(safe-area-inset-left, 0px));
     gap: 8px;
-    border-radius: 16px;
+    border: 0;
+    border-bottom: 1px solid var(--glass-border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   .topbar .brand {
@@ -5882,6 +5892,41 @@ svg.lucide:not([stroke-width="3"]) {
 }
 
 /* Atmósfera espacial: gradientes CSS estáticos y una constelación SVG ocasional. */
+.rating-chart-interactive { position: relative; }
+.rating-chart-graphic { width: 100%; height: 100%; }
+.rating-chart-targets { position: absolute; inset: 2px 0; display: grid; grid-auto-rows: 1fr; }
+.rating-chart-targets button { border: 0; padding: 0; background: transparent; cursor: pointer; border-radius: 4px; }
+.rating-chart-targets button:hover { background: rgba(233, 187, 88, .08); }
+.rating-chart-targets button:focus-visible { outline: 2px solid var(--acid); outline-offset: -2px; }
+.rating-group { scroll-margin-top: 110px; }
+
+.cosmic-depth,
+.cosmic-depth::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 16% 22%, rgba(221, 240, 253, .8) 0 1px, rgba(174, 218, 245, .12) 2px, transparent 5px),
+    radial-gradient(circle at 84% 71%, rgba(234, 217, 171, .65) 0 1px, transparent 3px),
+    radial-gradient(circle at 62% 44%, rgba(204, 224, 242, .5) 0 .7px, transparent 2px);
+  background-size: 570px 680px;
+  animation: cosmic-twinkle 11s ease-in-out infinite alternate;
+}
+
+.cosmic-depth::before {
+  content: "";
+  background-position: 173px 317px;
+  background-size: 730px 890px;
+  animation-duration: 17s;
+  animation-delay: -7s;
+}
+
+@keyframes cosmic-twinkle {
+  from { opacity: .3; }
+  to { opacity: .85; }
+}
+
 .cosmic-atmosphere {
   position: fixed;
   inset: 0;
@@ -5961,7 +6006,7 @@ svg.lucide:not([stroke-width="3"]) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cosmic-constellation { animation: none; }
+  .cosmic-constellation, .cosmic-depth, .cosmic-depth::before { animation: none; }
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -5970,5 +6015,5 @@ svg.lucide:not([stroke-width="3"]) {
 }
 
 @media print {
-  .cosmic-atmosphere { display: none; }
+  .cosmic-atmosphere, .cosmic-depth { display: none; }
 }

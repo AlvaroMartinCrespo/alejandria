@@ -10,7 +10,7 @@ import { LibraryRecap } from "@/components/library-recap";
 import { ReadingCalendar } from "@/components/reading-calendar";
 import { BackupEmail } from "@/components/backup-email";
 import { BookCover } from "@/components/book-cover";
-import { YearFold } from "@/components/year-fold";
+import { YearFold, useFoldState } from "@/components/year-fold";
 import { useAnime } from "@/components/anime-provider";
 import { useLibrary } from "@/components/library-provider";
 import { animeEpisodesWatched } from "@/lib/anime-utils";
@@ -68,7 +68,7 @@ function RatingGroups({ books }: { books: Book[] }) {
         const list = books.filter((book) => book.rating === rating).sort(sortByFinishedDesc);
         if (!list.length) return null;
         return (
-          <section className="rating-group" key={rating}>
+          <section className="rating-group" key={rating} data-rating={rating} tabIndex={-1} aria-label={`Libros con ${rating} de ${MAX_RATING} estrellas`}>
             <div className="rating-marker" aria-label={`${rating} de ${MAX_RATING} estrellas`}>
               <strong aria-hidden="true">★ {rating}<em>/ {MAX_RATING}</em></strong>
               <span>{list.length} libro{list.length === 1 ? "" : "s"}</span>
@@ -133,6 +133,20 @@ function Statistics() {
   // `completed` = todos los libros leídos (histórico). Lo usan Recap, Favoritos y Valoraciones.
   // Resumen, en cambio, solo muestra el año actual (`completedThisYear`).
   const currentYear = new Date().getFullYear();
+  const { setOpen: openRatingYear } = useFoldState(RATINGS_FOLD_KEY, String(currentYear));
+  const [selectedRating, setSelectedRating] = useState<number | null>(null);
+  const ratingYearRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (tab !== "valoraciones" || selectedRating === null) return;
+    const frame = requestAnimationFrame(() => {
+      const group = ratingYearRef.current?.querySelector<HTMLElement>(`[data-rating="${selectedRating}"]`);
+      group?.focus({ preventScroll: true });
+      group?.scrollIntoView({ block: "start", behavior: "instant" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [tab, selectedRating]);
+
   const completed = books.filter((book) => book.status === "read");
   const completedThisYear = completed.filter((book) => book.finishedYear === currentYear);
   // Páginas del año: lo registrado día a día + el resto de los libros terminados este año.
@@ -268,7 +282,11 @@ function Statistics() {
                 <p className="eyebrow">Valoraciones de {currentYear}</p>
                 <h2>Cómo puntúas</h2>
               </div>
-              <RatingChart data={ratingCounts} />
+              <RatingChart data={ratingCounts} onSelectRating={(rating) => {
+                openRatingYear(true);
+                setSelectedRating(rating);
+                selectTab("valoraciones");
+              }} />
             </article>
           </section>
           <section className="year-chart monthly-reading">
@@ -328,9 +346,11 @@ function Statistics() {
               {ratedYears.map((year) => {
                 const list = ratedByYear.get(year) ?? [];
                 return (
-                  <YearFold key={year} storageKey={RATINGS_FOLD_KEY} id={String(year)} title={String(year)} count={ratedCount(list)}>
-                    <RatingGroups books={list} />
-                  </YearFold>
+                  <div key={year} ref={year === currentYear ? ratingYearRef : undefined}>
+                    <YearFold storageKey={RATINGS_FOLD_KEY} id={String(year)} title={String(year)} count={ratedCount(list)}>
+                      <RatingGroups books={list} />
+                    </YearFold>
+                  </div>
                 );
               })}
               {ratedWithoutYear.length > 0 && (

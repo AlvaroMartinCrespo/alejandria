@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BookCover } from "@/components/book-cover";
 import { Hanko } from "@/components/hanko";
 import { useLibrary } from "@/components/library-provider";
@@ -20,6 +20,13 @@ export default function BookDetailPage() {
   const status = useSaveStatus();
   const book = books.find((item) => item.$id === id);
   const { tone, onTone } = useCoverTone(book?.coverUrl ?? null);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [id]);
 
   if (loading) return <LibrarySkeleton rows={2} />;
   if (!book) return <div className="big-empty"><strong>Este libro no está en tu biblioteca.</strong><button className="button secondary" onClick={() => router.push("/")}>Volver al inicio</button></div>;

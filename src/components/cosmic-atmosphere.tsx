@@ -11,9 +11,11 @@ const constellations = [
   },
 ];
 
-export function CosmicAtmosphere() {
+export function CosmicAtmosphere({ extended = false }: { extended?: boolean }) {
 
   return (
+    <>
+      {extended && <div className="cosmic-depth" aria-hidden="true" />}
     <div className="cosmic-atmosphere" aria-hidden="true">
       <span className="cosmic-nebula cosmic-nebula-one" />
       <span className="cosmic-nebula cosmic-nebula-two" />
@@ -26,5 +28,6 @@ export function CosmicAtmosphere() {
         </svg>
       ))}
     </div>
+    </>
   );
 }

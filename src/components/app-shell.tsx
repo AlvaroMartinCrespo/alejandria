@@ -87,7 +87,7 @@ function ShellContent({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-frame" data-locked={editorChecked && !editing ? "true" : undefined}>
-      <CosmicAtmosphere />
+      <CosmicAtmosphere extended={pathname === "/"} />
       <BodyMeteors />
       <header className="topbar">
         <Link href="/" className="brand" aria-label="Alejandría, inicio">
@@ -103,7 +103,7 @@ function ShellContent({ children }: { children: ReactNode }) {
         </nav>
         <div className="header-actions">
           <ConnectionIndicator state={realtime} compact />
-          <button className="icon-button" onClick={() => setSearchOpen(true)} aria-label="Buscar en mi biblioteca"><Search size={18} /></button>
+          <button className="icon-button" onClick={() => setSearchOpen(true)} aria-label="Buscar en mi biblioteca" title="Buscar en mi biblioteca"><Search size={18} /></button>
           <button className="icon-button" onClick={() => editing ? void lock() : setLockOpen(true)} aria-label={editing ? "Bloquear edición" : "Desbloquear edición"} title={editing ? "Bloquear edición" : "Desbloquear edición"}>
             {editing ? <Unlock size={18} /> : <Lock size={18} />}
           </button>

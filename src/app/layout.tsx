@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es" className={fontVariables}>
+    <html lang="es" className={fontVariables} data-scroll-behavior="smooth">
       <body><PwaRegister /><AppShell>{children}</AppShell></body>
     </html>
   );
