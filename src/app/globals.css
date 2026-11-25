@@ -26,7 +26,10 @@
   --coral: #ff735d;
   --gold: #e9bb58;
   --page-width: 1180px;
-  --nav-mobile-h: calc(66px + env(safe-area-inset-bottom, 0px));
+  --nav-mobile-h: calc(88px + env(safe-area-inset-bottom, 0px));
+  --glass-background: rgba(23, 28, 27, .94);
+  --glass-border: rgba(235, 248, 242, .18);
+  --glass-shadow: inset 0 1px 0 rgba(255,255,255,.13), inset 0 -1px 0 rgba(255,255,255,.025), 0 8px 28px rgba(0,0,0,.24);
 }
 
 * {
@@ -114,16 +117,20 @@ summary:focus-visible {
 
 .topbar {
   position: sticky;
-  top: 0;
+  top: calc(12px + env(safe-area-inset-top, 0px));
   z-index: var(--z-navbar);
+  width: min(calc(100% - 32px), calc(var(--page-width) + 48px));
+  margin: calc(12px + env(safe-area-inset-top, 0px)) auto 0;
   min-height: 72px;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: calc(env(safe-area-inset-top, 0px) + 14px) max(24px, calc((100vw - var(--page-width)) / 2)) 0;
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  background: rgba(11, 12, 12, .9);
-  backdrop-filter: blur(18px);
+  gap: 16px;
+  padding: 10px 20px;
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  background: linear-gradient(115deg, rgba(255,255,255,.07), transparent 42%, rgba(196,228,213,.035)), var(--glass-background);
+  box-shadow: var(--glass-shadow);
 }
 
 .brand {
@@ -155,9 +162,9 @@ summary:focus-visible {
   align-items: center;
   gap: 4px;
   padding: 4px;
-  border: 1px solid var(--line);
-  background: #101211;
-  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,.06);
+  background: rgba(0,0,0,.12);
+  border-radius: 12px;
 }
 
 .main-nav a {
@@ -165,8 +172,8 @@ summary:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 0 15px;
-  border-radius: 4px;
+  padding: 0 12px;
+  border-radius: 8px;
   color: var(--muted);
   font-size: 13px;
   font-weight: 600;
@@ -200,6 +207,16 @@ summary:focus-visible {
 
 .mobile-nav {
   display: none;
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root { --glass-background: rgba(23, 28, 27, .72); }
+
+  .topbar,
+  .mobile-nav {
+    -webkit-backdrop-filter: blur(22px) saturate(135%);
+    backdrop-filter: blur(22px) saturate(135%);
+  }
 }
 
 .button,
@@ -394,7 +411,8 @@ summary:focus-visible {
   left: 0;
   height: 2px;
   opacity: 0;
-  background: linear-gradient(90deg, rgba(242,240,233,.65), rgba(242,240,233,.16) 35%, transparent);
+  background: linear-gradient(90deg, rgba(247,251,255,.95), rgba(210,228,245,.3) 18%, transparent);
+  box-shadow: -2px 0 5px -2px rgba(224,239,255,.65);
   transform-origin: left center;
   will-change: transform, opacity;
 }
@@ -3135,6 +3153,8 @@ textarea::placeholder {
     left: 16px;
     display: none;
     padding: 7px;
+    border-color: var(--glass-border);
+    background: rgba(23,28,27,.97);
     box-shadow: 0 12px 40px rgba(0,0,0,.5);
   }
 
@@ -3175,11 +3195,23 @@ textarea::placeholder {
 
 @media (max-width: 680px) {
   .topbar {
-    min-height: 64px;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 14px);
-    padding-bottom: 8px;
-    padding-right: max(16px, env(safe-area-inset-right));
-    padding-left: max(16px, env(safe-area-inset-left));
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    width: calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)));
+    min-height: 60px;
+    margin-top: calc(8px + env(safe-area-inset-top, 0px));
+    padding: 8px 12px;
+    gap: 8px;
+    border-radius: 16px;
+  }
+
+  .topbar .brand {
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .topbar .brand-mark {
+    width: 27px;
+    height: 32px;
   }
 
   .desktop-label,
@@ -3198,18 +3230,21 @@ textarea::placeholder {
 
   .mobile-nav {
     position: fixed;
-    right: 0;
-    bottom: 0;
-    left: 0;
+    right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    left: max(12px, env(safe-area-inset-left, 0px));
+    max-width: 460px;
+    margin-inline: auto;
     z-index: calc(var(--z-navbar) - 15);
-    min-height: var(--nav-mobile-h);
+    min-height: 64px;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    column-gap: 8px;
-    padding: 6px max(14px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(14px, env(safe-area-inset-left));
-    border-top: 1px solid rgba(255,255,255,.12);
-    background: rgba(11,12,12,.94);
-    backdrop-filter: blur(18px);
+    column-gap: 4px;
+    padding: 6px;
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    background: linear-gradient(120deg, rgba(255,255,255,.09), transparent 55%), var(--glass-background);
+    box-shadow: var(--glass-shadow);
   }
 
   .mobile-nav a,
@@ -3220,7 +3255,7 @@ textarea::placeholder {
     gap: 3px;
     color: var(--muted);
     border: 0;
-    border-radius: 4px;
+    border-radius: 12px;
     background: transparent;
     text-align: center;
   }
@@ -5854,80 +5889,84 @@ svg.lucide:not([stroke-width="3"]) {
   overflow: hidden;
   pointer-events: none;
   contain: strict;
+  background:
+    radial-gradient(circle at 8% 38%, rgba(223,237,246,.38) 0 .8px, transparent 1.4px),
+    radial-gradient(circle at 92% 20%, rgba(223,237,246,.3) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 72% 83%, rgba(223,237,246,.28) 0 .8px, transparent 1.4px),
+    radial-gradient(circle at 24% 76%, rgba(223,237,246,.25) 0 .7px, transparent 1.3px);
 }
 
 .cosmic-nebula {
   position: absolute;
   display: block;
-  width: clamp(260px, 38vw, 560px);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  opacity: .075;
+  width: clamp(360px, 58vw, 1000px);
+  aspect-ratio: 1.45;
+  opacity: 1;
   background: radial-gradient(ellipse at center,
-    rgba(91, 111, 151, .34) 0%,
-    rgba(79, 91, 130, .17) 28%,
-    rgba(74, 83, 112, .055) 48%,
+    rgba(104, 151, 177, .13) 0%,
+    rgba(79, 124, 149, .065) 32%,
+    rgba(74, 112, 132, .025) 52%,
     transparent 70%);
-  animation: nebula-drift 54s ease-in-out infinite alternate;
-  will-change: transform;
 }
 
-.cosmic-nebula-one { top: -20%; left: -18%; }
+.cosmic-nebula-one { top: 4%; left: -14%; }
 
 .cosmic-nebula-two {
-  right: -20%;
-  bottom: -32%;
-  width: clamp(300px, 44vw, 640px);
-  opacity: .055;
+  right: -12%;
+  bottom: 2%;
+  width: clamp(360px, 62vw, 1080px);
   background: radial-gradient(ellipse at center,
-    rgba(119, 91, 139, .3) 0%,
-    rgba(94, 78, 121, .14) 32%,
-    rgba(74, 83, 112, .045) 52%,
+    rgba(143, 125, 176, .105) 0%,
+    rgba(113, 101, 151, .055) 32%,
+    rgba(85, 100, 132, .02) 52%,
     transparent 72%);
-  animation-delay: -27s;
-  animation-duration: 68s;
 }
 
 .cosmic-constellation {
   position: absolute;
-  width: clamp(170px, 24vw, 280px);
+  width: min(280px, 38vw);
   height: auto;
   overflow: visible;
-  opacity: 0;
-  animation: constellation-appear 17s ease-in-out both;
+  opacity: .7;
+  animation: constellation-appear 20s ease-in-out infinite alternate;
 }
 
-.cosmic-constellation line {
-  stroke: rgba(190, 202, 222, .32);
-  stroke-width: .65;
+.cosmic-constellation-north { top: 15%; right: 3%; }
+.cosmic-constellation-south { bottom: 16%; left: 2%; animation-delay: -12s; }
+
+.cosmic-constellation path {
+  fill: none;
+  stroke: rgba(190, 212, 232, .38);
+  stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
 
 .cosmic-constellation circle {
-  fill: rgba(224, 231, 242, .76);
-  filter: drop-shadow(0 0 2px rgba(190, 210, 240, .5));
+  fill: rgba(231, 241, 252, .9);
+  filter: drop-shadow(0 0 3px rgba(190, 220, 248, .6));
 }
 
 @keyframes constellation-appear {
-  0%, 100% { opacity: 0; }
-  14%, 78% { opacity: .42; }
-}
-
-@keyframes nebula-drift {
-  from { transform: translate3d(-1.5%, -1%, 0) scale(.96); }
-  to { transform: translate3d(2%, 2.5%, 0) scale(1.04); }
+  from { opacity: .5; }
+  to { opacity: .78; }
 }
 
 @media (max-width: 640px) {
-  .cosmic-nebula { width: 78vw; opacity: .055; }
-  .cosmic-nebula-one { top: -12%; left: -34%; }
-  .cosmic-nebula-two { right: -38%; bottom: -18%; opacity: .04; }
-  .cosmic-constellation { width: clamp(150px, 48vw, 210px); }
+  .cosmic-nebula { width: 110vw; }
+  .cosmic-nebula-one { top: 12%; left: -38%; }
+  .cosmic-nebula-two { right: -36%; bottom: 12%; }
+  .cosmic-constellation { width: min(230px, 58vw); }
+  .cosmic-constellation-north { top: 17%; right: 2%; }
+  .cosmic-constellation-south { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cosmic-nebula { animation: none; }
-  .cosmic-constellation { display: none; }
+  .cosmic-constellation { animation: none; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root { --glass-background: #171c1b; }
+  .topbar, .mobile-nav { -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
 @media print {
